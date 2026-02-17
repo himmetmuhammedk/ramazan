@@ -34,10 +34,9 @@
             transform: scale(1.002);
         }
 
-        /* Yazdırma Tasarımı */
+        /* Yazdırma Tasarımları */
         @media print {
-            @page { size: portrait; margin: 10mm; }
-            body { background: white !important; color: black !important; overflow: visible !important; }
+            body { background: white !important; color: #000 !important; overflow: visible !important; }
             #root > div > aside, 
             #root > div > main > header,
             .no-print,
@@ -48,64 +47,84 @@
             #root { height: auto !important; overflow: visible !important; }
             main { padding: 0 !important; width: 100% !important; height: auto !important; overflow: visible !important; }
             
-            /* Liste Yazdırma Modu (Mutfak & Servis) */
+            /* Ortak Yazdırma Kuralları */
+            * { color: #000 !important; font-weight: bold; }
+
+            /* 1. LİSTE YAZDIRMA (YATAY - MUTFAK & SERVİS) */
+            body.print-mode-list {
+                margin: 0;
+            }
+            body.print-mode-list @page { size: landscape; margin: 8mm; }
             body.print-mode-list .print-report { display: block !important; width: 100%; }
             body.print-mode-list .print-report-header { 
-                border-bottom: 3px solid black; 
+                border-bottom: 4px solid #000; 
                 padding-bottom: 10px; 
                 margin-bottom: 20px;
                 display: flex;
                 justify-content: space-between;
                 align-items: flex-end;
             }
-            body.print-mode-list .print-report-title h1 { font-size: 22pt; font-weight: bold; margin: 0; }
-            body.print-mode-list .print-report-title p { font-size: 10pt; margin: 0; font-style: italic; }
-            body.print-mode-list .print-report-meta { text-align: right; font-size: 10pt; }
+            body.print-mode-list .print-report-title h1 { font-size: 24pt; font-weight: 900; margin: 0; }
+            body.print-mode-list .print-report-meta { text-align: right; font-size: 11pt; line-height: 1.5; }
 
             body.print-mode-list .print-stats-summary {
                 display: flex;
                 gap: 20px;
                 margin-bottom: 20px;
-                background: #f8f8f8 !important;
-                padding: 10px;
-                border: 1px solid #ddd;
+                background: #f0f0f0 !important;
+                padding: 15px;
+                border: 2px solid #000;
+                -webkit-print-color-adjust: exact;
             }
-            body.print-mode-list .print-stat-box { flex: 1; }
-            body.print-mode-list .print-stat-box strong { font-size: 14pt; }
+            body.print-mode-list .print-stat-box { flex: 1; border-right: 1px solid #000; }
+            body.print-mode-list .print-stat-box:last-child { border-right: none; }
+            body.print-mode-list .print-stat-box strong { font-size: 18pt; display: block; }
+            body.print-mode-list .print-stat-box span { font-size: 10pt; text-transform: uppercase; }
 
-            body.print-mode-list .print-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+            body.print-mode-list .print-table { width: 100%; border-collapse: collapse; }
             body.print-mode-list .print-table th { 
-                background: #eee !important; 
-                border: 1px solid #000; 
+                background: #ccc !important; 
+                border: 2px solid #000; 
                 padding: 8px; 
-                font-size: 10pt; 
+                font-size: 11pt; 
                 text-align: left;
-                text-transform: uppercase;
+                -webkit-print-color-adjust: exact;
             }
             body.print-mode-list .print-table td { 
                 border: 1px solid #000; 
                 padding: 8px; 
-                font-size: 9pt; 
+                font-size: 10pt; 
                 vertical-align: top;
+                color: #000 !important;
             }
-            body.print-mode-list .print-table tr:nth-child(even) { background: #fafafa !important; }
-            
-            /* İsim Kartı Yazdırma Modu (PDF Stilinde) */
-            body.print-mode-cards .name-cards-container { display: grid !important; grid-template-columns: 1fr 1fr; grid-auto-rows: 24.5%; gap: 10px; padding: 10mm; height: 297mm; width: 210mm; }
+
+            /* 2. REZERVE YAZDIRMA (DİKEY - İSİM KARTLARI) */
+            body.print-mode-cards @page { size: portrait; margin: 0; }
+            body.print-mode-cards .name-cards-container { 
+                display: grid !important; 
+                grid-template-columns: 1fr 1fr; 
+                grid-template-rows: repeat(4, 25%); 
+                height: 297mm; 
+                width: 210mm;
+                padding: 4mm;
+                box-sizing: border-box;
+            }
             body.print-mode-cards .name-card { 
-                border: 4px double #4a7c44; 
+                border: 8px double #4a7c44; 
+                margin: 4mm;
                 display: flex !important; 
                 flex-direction: column; 
                 align-items: center; 
                 justify-content: center; 
                 text-align: center;
                 padding: 20px;
-                position: relative;
+                box-sizing: border-box;
                 page-break-inside: avoid;
+                -webkit-print-color-adjust: exact;
             }
-            body.print-mode-cards .name-card-title { font-family: 'Playfair Display', serif; font-size: 24pt; font-style: italic; margin-bottom: 5px; }
-            body.print-mode-cards .name-card-name { font-family: 'Playfair Display', serif; font-size: 28pt; font-weight: 900; line-height: 1.1; margin-bottom: 30px; text-transform: uppercase; }
-            body.print-mode-cards .name-card-logo { width: 120px; height: 120px; object-fit: contain; }
+            body.print-mode-cards .name-card-title { font-family: 'Inter', sans-serif; font-size: 28pt; font-weight: 400; color: #000 !important; margin-bottom: 5px; }
+            body.print-mode-cards .name-card-name { font-family: 'Inter', sans-serif; font-size: 34pt; font-weight: 900; line-height: 1.1; color: #000 !important; margin-bottom: 35px; text-transform: uppercase; }
+            body.print-mode-cards .name-card-logo { width: 150px; height: 150px; object-fit: contain; }
         }
         
         .print-report, .name-cards-container { display: none; }
@@ -149,145 +168,17 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        const MENU_DATABASE = {
-            '2026-02-19': ["Mantar Çorbası", "Uluırmak Kebabı", "Pirinç Pilavı", "Salata"],
-            '2026-02-20': ["Mercimek Çorbası", "Tas Kebabı", "Bulgur Pilavı", "Salata"],
-            '2026-02-21': ["Domates Çorbası", "İzmir Köfte", "Pirinç Pilavı", "Cacık"],
-            '2026-02-22': ["Ezogelin Çorbası", "Çiftlik Kebabı", "Pirinç Pilavı", "Salata"],
-            '2026-02-23': ["Şehriye Çorbası", "Rosto Köfte", "Pirinç Pilavı", "Salata"],
-            '2026-02-24': ["Mercimek Çorbası", "Saksı Kebabı", "Bulgur Pilavı", "Salata"],
-            '2026-02-25': ["Mantar Çorbası", "Patlıcan Musakka", "Pirinç Pilavı", "Cacık"],
-            '2026-02-26': ["Domates Çorbası", "Et Sote", "Pirinç Pilavı", "Salata"],
-            '2026-02-27': ["Ezogelin Çorbası", "Sebzeli Köfte", "Bulgur Pilavı", "Salata"],
-            '2026-02-28': ["Şehriye Çorbası", "Orman Kebabı", "Bulgur Pilavı", "Salata"],
-            '2026-03-01': ["Mantar Çorbası", "Karnıyarık", "Pirinç Pilavı", "Cacık"],
-            '2026-03-02': ["Mercimek Çorbası", "Uluırmak Kebabı", "Pirinç Pilavı", "Salata"],
-            '2026-03-03': ["Ezogelin Çorbası", "Tas Kebabı", "Bulgur Pilavı", "Salata"],
-            '2026-03-04': ["Domates Çorbası", "İzmir Köfte", "Pirinç Pilavı", "Cacık"],
-            '2026-03-05': ["Şehriye Çorbası", "Çiftlik Kebabı", "Pirinç Pilavı", "Salata"],
-            '2026-03-06': ["Y. Yoğurt Çorbası", "Rosto Köfte", "Bulgur Pilavı", "Salata"],
-            '2026-03-07': ["Şehriye Çorbası", "Saksı Kebabı", "Pirinç Pilavı", "Salata"],
-            '2026-03-08': ["Mantar Çorbası", "Patlıcan Musakka", "Pirinç Pilavı", "Cacık"],
-            '2026-03-09': ["Mercimek Çorbası", "Et Sote", "Pirinç Pilavı", "Salata"],
-            '2026-03-10': ["Ezogelin Çorbası", "Sebzeli Köfte", "Bulgur Pilavı", "Salata"],
-            '2026-03-11': ["Şehriye Çorbası", "Orman Kebabı", "Bulgur Pilavı", "Salata"],
-            '2026-03-12': ["Mantar Çorbası", "Karnıyarık", "Pirinç Pilavı", "Cacık"],
-            '2026-03-13': ["Mercimek Çorbası", "Uluırmak Kebabı", "Pirinç Pilavı", "Salata"],
-            '2026-03-14': ["Ezogelin Çorbası", "Tas Kebabı", "Bulgur Pilavı", "Salata"],
-            '2026-03-15': ["Domates Çorbası", "İzmir Köfte", "Pirinç Pilavı", "Cacık"],
-            '2026-03-16': ["Şehriye Çorbası", "Çiftlik Kebabı", "Pirinç Pilavı", "Salata"],
-            '2026-03-17': ["Ezogelin Çorbası", "Rosto Köfte", "Bulgur Pilavı", "Salata"],
-            '2026-03-18': ["Mercimek Çorbası", "Saksı Kebabı", "Bulgur Pilavı", "Salata"],
-            '2026-03-19': ["Mantar Çorbası", "Uluırmak Kebabı", "Pirinç Pilavı", "Salata"]
-        };
-
-        const CATEGORY_ORDER = ["GÜNÜN MENÜSÜ", "İFTAR MENÜLERİ", "ALAKART MENÜLER", "TATLILAR", "PASTALAR"];
-
-        const Sidebar = ({ stats, onNewReservation, onShowAllMenus, onOpenMenuManagement, selectedDate }) => {
-            const [isEditingMenu, setIsEditingMenu] = useState(false);
-            const [menuItems, setMenuItems] = useState(["...", "...", "...", "..."]);
-
-            useEffect(() => {
-                const menuId = `menu_${selectedDate}`;
-                const menuDoc = doc(db, 'settings', menuId);
-                const unsubscribe = onSnapshot(menuDoc, (snap) => {
-                    if (snap.exists()) setMenuItems(snap.data().items);
-                    else setMenuItems(MENU_DATABASE[selectedDate] || ["Günün Menüsü", "Henüz Belirlenmedi", "", ""]);
-                }, () => {
-                    setMenuItems(MENU_DATABASE[selectedDate] || ["Günün Menüsü", "Henüz Belirlenmedi", "", ""]);
-                });
-                return () => unsubscribe();
-            }, [selectedDate]);
-
-            const saveMenu = async () => {
-                try {
-                    await setDoc(doc(db, 'settings', `menu_${selectedDate}`), { items: menuItems });
-                    setIsEditingMenu(false);
-                } catch (e) {
-                    alert("Kayıt başarısız!");
-                }
-            };
-
-            return (
-                <aside className="w-full md:w-80 h-full bg-slate-900 border-l border-slate-800 p-6 flex flex-col gap-6 overflow-y-auto no-print">
-                    <div className="flex items-center gap-3">
-                        <div className="bg-amber-500/20 p-2 rounded-lg">
-                            <i className="fas fa-moon text-amber-500 text-2xl"></i>
-                        </div>
-                        <span className="text-xl font-bold text-white tracking-tight">İftar Rezervasyon</span>
-                    </div>
-
-                    <div className="space-y-3">
-                        <button onClick={onNewReservation} className="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-5 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 text-lg">
-                            <i className="fas fa-calendar-plus"></i> Rezervasyon Al
-                        </button>
-                        
-                        <button onClick={onOpenMenuManagement} className="w-full bg-slate-800 hover:bg-slate-700 text-amber-500 font-bold py-4 rounded-xl transition-all border border-slate-700 flex items-center justify-center gap-2 text-base">
-                            <i className="fas fa-utensils"></i> Menüler
-                        </button>
-                    </div>
-
-                    <div className="space-y-3">
-                        <h3 className="text-xs font-bold text-white uppercase tracking-widest">İstatistikler</h3>
-                        <div className="bg-slate-800/40 p-4 rounded-lg border border-slate-700/30 flex justify-between items-center">
-                            <p className="text-white text-sm">Toplam Kişi</p>
-                            <span className="text-emerald-400 font-bold text-xl">{stats.totalPeople}</span>
-                        </div>
-                        <div className="bg-slate-800/40 p-4 rounded-lg border border-slate-700/30 flex justify-between items-center">
-                            <p className="text-white text-sm">Dolu Masa</p>
-                            <span className="text-amber-400 font-bold text-xl">{stats.count}</span>
-                        </div>
-                    </div>
-
-                    <div className="mt-auto pt-6 border-t border-slate-800/50">
-                        <div className="flex items-center justify-between mb-3">
-                            <h3 className="text-xs font-bold text-white uppercase tracking-widest">Günün Menüsü</h3>
-                            <div className="flex gap-2">
-                                <button onClick={onShowAllMenus} title="Tüm Ramazan Menülerini Gör" className="text-slate-400 hover:text-amber-500 transition-colors">
-                                    <i className="fas fa-list-ul"></i>
-                                </button>
-                                <button onClick={() => isEditingMenu ? saveMenu() : setIsEditingMenu(true)} className="text-amber-500 text-sm hover:text-amber-400">
-                                    <i className={`fas ${isEditingMenu ? 'fa-save' : 'fa-pen-to-square'}`}></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div className="bg-slate-800/50 p-5 rounded-xl border border-amber-500/10">
-                            <ul className="space-y-4">
-                                {menuItems.map((item, idx) => (
-                                    <li key={idx} className="text-base text-white list-none flex items-center">
-                                        {isEditingMenu ? (
-                                            <input type="text" className="bg-slate-900 border border-slate-700 rounded px-2 py-1 w-full text-sm text-white" value={item} onChange={(e) => {
-                                                const newMenu = [...menuItems]; newMenu[idx] = e.target.value; setMenuItems(newMenu);
-                                            }} />
-                                        ) : (
-                                            <span className={`${idx === 1 ? "font-bold text-amber-400 text-lg" : "text-white"}`}>{item}</span>
-                                        )}
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-                    </div>
-                </aside>
-            );
-        };
-
         const App = () => {
-            const [selectedDate, setSelectedDate] = useState('2026-02-19');
+            const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
             const [printTime, setPrintTime] = useState('');
             const [reservations, setReservations] = useState([]);
-            const [categorizedMenus, setCategorizedMenus] = useState({});
             const [modal, setModal] = useState({ open: false, data: null });
-            const [showAllMenus, setShowAllMenus] = useState(false);
-            const [showMenuManagement, setShowMenuManagement] = useState(false);
 
             useEffect(() => {
-                const unsubscribe1 = onSnapshot(collection(db, 'reservations'), (snap) => {
+                const unsubscribe = onSnapshot(collection(db, 'reservations'), (snap) => {
                     setReservations(snap.docs.map(d => ({ id: d.id, ...d.data() })));
                 });
-                const unsubscribe2 = onSnapshot(doc(db, 'settings', 'categorized_menus'), (snap) => {
-                    if (snap.exists()) setCategorizedMenus(snap.data().content);
-                });
-                return () => { unsubscribe1(); unsubscribe2(); };
+                return () => unsubscribe();
             }, []);
 
             const filtered = useMemo(() => {
@@ -308,26 +199,18 @@
                 document.body.classList.add(`print-mode-${mode}`);
                 setTimeout(() => {
                     window.print();
-                }, 100);
+                }, 200);
+            };
+
+            const handleDelete = async (id) => {
+                if (window.confirm("Bu rezervasyonu silmek istediğinize emin misiniz?")) {
+                    await deleteDoc(doc(db, 'reservations', id));
+                }
             };
 
             const sendWhatsAppMessage = (res) => {
                 const formattedDate = res.date.split('-').reverse().join('.');
-                const peopleInfo = res.childCount > 0 ? `${res.adultCount} Yetişkin, ${res.childCount} Çocuk` : `${res.adultCount} Kişi`;
-                
-                let orderText = "";
-                let totalPrice = 0;
-                if (res.orders && res.orders.length > 0) {
-                    orderText = "\n\nSİPARİŞ DETAYLARI:\n" + res.orders.map(o => {
-                        const p = parseFloat(o.price.replace('.','').replace(',','.'));
-                        totalPrice += (p * o.quantity);
-                        return `* ${o.name} (${o.quantity} Adet)`;
-                    }).join('\n');
-                    orderText += `\n\nTOPLAM TUTAR: ₺${totalPrice.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}`;
-                }
-
-                const message = `Sayın ${res.customerName},\n\nMasa: G-${res.tableNumber.toString().padStart(2, '0')}\nGelveri\n${peopleInfo}\n\nTarih: ${formattedDate}\n\nRezervasyonunuz alınmıştır.${orderText}\n\nUygulama Oteli`;
-
+                const message = `Sayın ${res.customerName},\n\nMasa: G-${res.tableNumber.toString().padStart(2, '0')}\nİftar Rezervasyonunuz ${formattedDate} tarihi için onaylanmıştır.\n\nUluırmak Uygulama Oteli`;
                 let cleanPhone = res.phone.replace(/\D/g, '');
                 if (cleanPhone.startsWith('0')) cleanPhone = '90' + cleanPhone.substring(1);
                 window.open(`https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(message)}`, '_blank');
@@ -335,76 +218,82 @@
 
             return (
                 <div className="flex h-screen w-full bg-slate-950 text-white overflow-hidden">
-                    {/* Mutfak ve Servis İçin Detaylı Liste Raporu */}
+                    {/* 1. LİSTE YAZDIRMA ŞABLONU (YATAY - MUTFAK & SERVİS) */}
                     <div className="print-report">
                         <div className="print-report-header">
                             <div className="print-report-title">
                                 <h1>Uluırmak Uygulama Oteli</h1>
-                                <p>İftar Rezervasyon Mutfak & Servis Listesi</p>
+                                <p style={{fontSize: '14pt', marginTop: '5px'}}>İftar Rezervasyon Raporu (Mutfak & Servis)</p>
                             </div>
                             <div className="print-report-meta">
-                                <strong>Rapor Tarihi:</strong> {selectedDate.split('-').reverse().join('.')}<br/>
-                                <strong>Yazdırma:</strong> {printTime}
+                                <strong>Hizmet Günü:</strong> {selectedDate.split('-').reverse().join('.')}<br/>
+                                <strong>Çıktı Saati:</strong> {printTime}
                             </div>
                         </div>
 
                         <div className="print-stats-summary">
-                            <div className="print-stat-box"><strong>{stats.count}</strong><br/>Toplam Masa</div>
-                            <div className="print-stat-box"><strong>{stats.totalAdults}</strong><br/>Yetişkin</div>
-                            <div className="print-stat-box"><strong>{stats.totalChildren}</strong><br/>Çocuk</div>
-                            <div className="print-stat-box"><strong>{stats.totalPeople}</strong><br/>Genel Toplam Kişi</div>
+                            <div className="print-stat-box">
+                                <span>Toplam Masa</span>
+                                <strong>{stats.count} Adet</strong>
+                            </div>
+                            <div className="print-stat-box">
+                                <span>Yetişkin Sayısı</span>
+                                <strong>{stats.totalAdults} Kişi</strong>
+                            </div>
+                            <div className="print-stat-box">
+                                <span>Çocuk Sayısı</span>
+                                <strong>{stats.totalChildren} Kişi</strong>
+                            </div>
+                            <div className="print-stat-box">
+                                <span>Genel Toplam</span>
+                                <strong>{stats.totalPeople} Kişi</strong>
+                            </div>
                         </div>
 
                         <table className="print-table">
                             <thead>
                                 <tr>
                                     <th style={{width: '60px'}}>Masa</th>
-                                    <th style={{width: '180px'}}>Misafir Bilgisi</th>
-                                    <th style={{width: '80px'}}>Kişi (Y/Ç)</th>
-                                    <th>Sipariş Detayları</th>
-                                    <th style={{width: '180px'}}>Notlar</th>
+                                    <th style={{width: '220px'}}>Misafir Ad Soyad</th>
+                                    <th style={{width: '100px'}}>Kişi (Y+Ç)</th>
+                                    <th>Sipariş / Menü Detayları</th>
+                                    <th style={{width: '200px'}}>Özel Notlar</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {filtered.map(res => (
+                                {filtered.length > 0 ? filtered.map(res => (
                                     <tr key={res.id}>
-                                        <td style={{fontWeight: 'bold', fontSize: '11pt'}}>G-{res.tableNumber.toString().padStart(2, '0')}</td>
-                                        <td>
-                                            <strong>{res.customerName}</strong><br/>
-                                            <span style={{fontSize: '8pt'}}>{res.phone}</span>
-                                        </td>
-                                        <td style={{textAlign: 'center'}}>
-                                            {res.adultCount}Y {res.childCount > 0 ? `+ ${res.childCount}Ç` : ''}
-                                        </td>
+                                        <td style={{fontSize: '12pt', fontWeight: '900'}}>G-{res.tableNumber.toString().padStart(2, '0')}</td>
+                                        <td>{res.customerName}</td>
+                                        <td style={{textAlign: 'center'}}>{res.adultCount}Y {res.childCount > 0 ? `+ ${res.childCount}Ç` : ''}</td>
                                         <td>
                                             {res.orders && res.orders.length > 0 ? (
                                                 <ul style={{margin: 0, paddingLeft: '15px'}}>
                                                     {res.orders.map((o, idx) => <li key={idx}>{o.quantity}x {o.name}</li>)}
                                                 </ul>
-                                            ) : 'Sipariş Girilmemiş'}
+                                            ) : '-'}
                                         </td>
-                                        <td style={{fontStyle: 'italic'}}>{res.note || '-'}</td>
+                                        <td style={{fontSize: '9pt', fontStyle: 'italic'}}>{res.note || '-'}</td>
                                     </tr>
-                                ))}
+                                )) : (
+                                    <tr><td colSpan="5" style={{textAlign: 'center', padding: '20px'}}>Bu tarih için kayıtlı rezervasyon bulunmamaktadır.</td></tr>
+                                )}
                             </tbody>
                         </table>
-                        
-                        <div style={{marginTop: '30px', fontSize: '8pt', borderTop: '1px solid #ccc', paddingTop: '5px'}}>
-                            * Bu rapor mutfak ve servis birimleri için otomatik oluşturulmuştur.
-                        </div>
                     </div>
 
-                    {/* PDF Stilinde İsim Kartları Yazdırma Şablonu */}
+                    {/* 2. REZERVE YAZDIRMA ŞABLONU (DİKEY - İSİM KARTLARI) */}
                     <div className="name-cards-container">
                         {filtered.map(res => (
                             <div key={res.id} className="name-card">
                                 <div className="name-card-title">SAYIN</div>
                                 <div className="name-card-name">{res.customerName}</div>
-                                <img src="https://uluirmakmtal.meb.k12.tr/tema/okul_logo.png" alt="Logo" className="name-card-logo" />
+                                <img src="https://i.ibb.co/LhyYvYQ/uluirmak-logo.png" alt="Okul Logo" className="name-card-logo" />
                             </div>
                         ))}
                     </div>
 
+                    {/* ANA UYGULAMA EKRANI */}
                     <main className="flex-1 p-8 flex flex-col overflow-hidden">
                         <header className="flex justify-between items-center mb-8 no-print">
                             <div><h1 className="text-4xl font-bold text-amber-500">Uluırmak Uygulama Oteli</h1></div>
@@ -422,7 +311,7 @@
                             </div>
                         </header>
 
-                        <div className="flex-1 overflow-hidden flex flex-col bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl main-reservation-list">
+                        <div className="flex-1 overflow-hidden flex flex-col bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl main-reservation-list no-print">
                             <div className="grid grid-cols-12 gap-4 px-8 py-5 border-b border-slate-800 bg-slate-800/40 text-[10px] font-black text-white uppercase tracking-widest">
                                 <div className="col-span-1">Masa</div><div className="col-span-2">Durum</div><div className="col-span-3">Misafir</div><div className="col-span-1 text-center">Kişi</div><div className="col-span-3">Sipariş Özeti</div><div className="col-span-2 text-right">İşlem</div>
                             </div>
@@ -431,31 +320,12 @@
                                     const num = i + 1;
                                     const res = filtered.find(r => r.tableNumber === num);
                                     return (
-                                        <div key={num} onClick={() => setModal({ open: true, data: res || { tableNumber: num } })} className={`grid grid-cols-12 gap-4 px-8 py-5 items-center table-row-hover cursor-pointer ${res ? 'bg-amber-500/[0.03]' : ''}`}>
+                                        <div key={num} onClick={() => !res && setModal({ open: true, data: { tableNumber: num } })} className={`grid grid-cols-12 gap-4 px-8 py-5 items-center table-row-hover cursor-pointer ${res ? 'bg-amber-500/[0.03]' : ''}`}>
                                             <div className="col-span-1"><span className={`text-xl font-black ${res ? 'text-amber-500' : 'text-white/20'}`}>G-{num.toString().padStart(2, '0')}</span></div>
                                             <div className="col-span-2">{res ? <span className="text-[10px] font-bold text-amber-500 uppercase tracking-widest bg-amber-500/10 px-3 py-1 rounded-full">Dolu</span> : <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest bg-emerald-500/5 px-3 py-1 rounded-full">Boş</span>}</div>
                                             <div className="col-span-3">{res ? <div className="flex flex-col"><span className="font-bold text-sm">{res.customerName}</span><span className="text-xs text-white/50">{res.phone}</span></div> : <span className="text-xs text-white/10">-</span>}</div>
-                                            <div className="col-span-1 text-center">
-                                                {res ? (
-                                                    <div className="flex flex-col items-center justify-center -space-y-1">
-                                                        <div className="flex items-center gap-1 text-emerald-400">
-                                                            <span className="text-sm font-black">{res.adultCount}</span>
-                                                            <span className="text-[8px] font-bold uppercase opacity-60">Y</span>
-                                                        </div>
-                                                        {res.childCount > 0 && (
-                                                            <div className="flex items-center gap-1 text-cyan-400">
-                                                                <span className="text-[11px] font-black">{res.childCount}</span>
-                                                                <span className="text-[8px] font-bold uppercase opacity-60">Ç</span>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                ) : "-"}
-                                            </div>
-                                            <div className="col-span-3">
-                                                {res && res.orders?.length > 0 ? (
-                                                    <span className="text-xs text-white/60 line-clamp-1">{res.orders.map(o => `${o.quantity} ${o.name}`).join(', ')}</span>
-                                                ) : <span className="text-xs text-white/10">-</span>}
-                                            </div>
+                                            <div className="col-span-1 text-center">{res ? `${res.adultCount}+${res.childCount}` : "-"}</div>
+                                            <div className="col-span-3">{res && res.orders?.length > 0 ? <span className="text-xs text-white/60 line-clamp-1">{res.orders.map(o => o.name).join(', ')}</span> : "-"}</div>
                                             <div className="col-span-2 text-right flex justify-end gap-2">
                                                 {res && <button onClick={(e) => { e.stopPropagation(); sendWhatsAppMessage(res); }} className="p-2 bg-emerald-500/10 text-emerald-500 rounded-lg"><i className="fab fa-whatsapp"></i></button>}
                                                 {res && <button onClick={(e) => { e.stopPropagation(); handleDelete(res.id); }} className="p-2 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500 hover:text-white transition-all"><i className="fas fa-trash-alt"></i></button>}
@@ -467,7 +337,23 @@
                         </div>
                     </main>
 
-                    <Sidebar stats={stats} selectedDate={selectedDate} onNewReservation={() => setModal({ open: true, data: null })} onShowAllMenus={() => setShowAllMenus(true)} onOpenMenuManagement={() => setShowMenuManagement(true)} />
+                    {/* YAN PANEL */}
+                    <aside className="w-80 bg-slate-900 border-l border-slate-800 p-6 flex flex-col gap-6 no-print">
+                        <div className="flex items-center gap-3">
+                            <i className="fas fa-moon text-amber-500 text-2xl"></i>
+                            <span className="text-xl font-bold">Ramazan Sofrası</span>
+                        </div>
+                        <div className="space-y-4">
+                            <div className="bg-slate-800 p-4 rounded-xl">
+                                <p className="text-xs text-slate-500 font-bold uppercase mb-1">Dolu Masa</p>
+                                <p className="text-2xl font-black text-amber-500">{stats.count} / 30</p>
+                            </div>
+                            <div className="bg-slate-800 p-4 rounded-xl">
+                                <p className="text-xs text-slate-500 font-bold uppercase mb-1">Beklenen Kişi</p>
+                                <p className="text-2xl font-black text-emerald-500">{stats.totalPeople}</p>
+                            </div>
+                        </div>
+                    </aside>
                 </div>
             );
         };
