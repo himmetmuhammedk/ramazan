@@ -76,27 +76,27 @@ const App: React.FC = () => {
   return (
     <div className="flex flex-col md:flex-row h-screen w-full bg-slate-950 text-slate-100 overflow-hidden">
       {/* Main Content (Left side) */}
-      <main className="flex-1 p-6 flex flex-col min-w-0 order-1 overflow-hidden">
-        <header className="flex-none mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <main className="flex-1 p-4 md:p-6 flex flex-col min-w-0 order-1 overflow-hidden">
+        <header className="flex-none mb-6 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
-            <h1 className="text-4xl font-bold text-amber-500 mb-2">Ramazan Sofrası</h1>
-            <p className="text-slate-400">Restoran Rezervasyon ve Masa Yönetim Paneli</p>
+            <h1 className="text-3xl md:text-4xl font-bold text-amber-500 mb-1">Ramazan Sofrası</h1>
+            <p className="text-slate-400 text-sm md:text-base">Rezervasyon ve Masa Yönetim Paneli</p>
           </div>
-          <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl flex items-center gap-4">
+          <div className="bg-slate-900 border border-slate-800 p-3 md:p-4 rounded-xl flex items-center gap-4 self-start lg:self-auto">
             <div className="text-right">
-              <p className="text-xs uppercase tracking-widest text-slate-500">Kalan Masa</p>
-              <p className="text-2xl font-bold text-emerald-400">{totalTables - stats.reservedCount}</p>
+              <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Kalan Masa</p>
+              <p className="text-xl md:text-2xl font-bold text-emerald-400">{totalTables - stats.reservedCount}</p>
             </div>
-            <div className="w-px h-10 bg-slate-800"></div>
+            <div className="w-px h-8 bg-slate-800"></div>
             <div className="text-right">
-              <p className="text-xs uppercase tracking-widest text-slate-500">Dolan Masa</p>
-              <p className="text-2xl font-bold text-amber-400">{stats.reservedCount}</p>
+              <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Dolan Masa</p>
+              <p className="text-xl md:text-2xl font-bold text-amber-400">{stats.reservedCount}</p>
             </div>
           </div>
         </header>
 
         {/* Scrollable List Container */}
-        <div className="flex-1 overflow-y-auto min-h-0 pr-2 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto min-h-0 pr-1 custom-scrollbar">
           <ReservationList 
             tables={tables} 
             onTableClick={(table) => {
@@ -115,7 +115,7 @@ const App: React.FC = () => {
       <Sidebar 
         stats={stats} 
         onNewReservation={() => handleOpenNewModal()} 
-        className="order-2 border-l"
+        className="order-2 md:order-2 border-t md:border-t-0 md:border-l"
       />
 
       {isModalOpen && (
