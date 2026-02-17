@@ -56,7 +56,7 @@
         
         @page landscapePage {
             size: A4 landscape;
-            margin: 1cm;
+            margin: 0.5cm;
         }
         
         @page portraitPage {
@@ -94,8 +94,7 @@
             /* Liste Yazdırma Modu (Tablo - Yatay) */
             body.print-mode-list .print-header { 
                 display: block !important; 
-                /* Removed border-bottom to avoid duplication */
-                margin-bottom: 20px;
+                margin-bottom: 10px;
                 position: static; width: 100%; height: auto; overflow: visible; clip: auto; visibility: visible;
             }
             
@@ -107,23 +106,25 @@
             body.print-mode-list .print-table {
                 width: 100%;
                 border-collapse: collapse;
-                font-size: 11pt; /* Yatay modda biraz daha büyük font */
+                font-size: 10pt;
             }
             
             body.print-mode-list .print-table th,
             body.print-mode-list .print-table td {
                 border: 1px solid #000;
-                padding: 8px 10px;
+                padding: 6px 8px;
                 vertical-align: top;
                 page-break-inside: avoid;
             }
 
             body.print-mode-list .print-table th {
-                background-color: #f3f4f6 !important;
-                font-weight: bold;
+                background-color: #f3f4f6 !important; /* Açık gri başlık */
+                font-weight: 800;
+                text-transform: capitalize;
                 text-align: left;
                 -webkit-print-color-adjust: exact;
                 border-bottom: 2px solid #000;
+                padding: 8px;
             }
             
             /* İsim Kartı Yazdırma Modu (PDF Stilinde - Dikey) */
@@ -793,26 +794,30 @@
                 <div className="flex h-screen w-full bg-slate-950 text-white overflow-hidden">
                     {/* Liste Yazdırma Şablonu (Servis ve Mutfak İçin) */}
                     <div className="print-header">
-                        {/* New Header Layout requested: Left Date, Center Title, Right Print Time */}
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '2px solid black', paddingBottom: '10px', marginBottom: '10px' }}>
+                        {/* Header Container with Flexbox */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '4px solid black', paddingBottom: '10px', marginBottom: '15px' }}>
+                            {/* Left: Date */}
                             <div style={{ flex: 1, textAlign: 'left' }}>
-                                <div style={{ fontSize: '16pt', fontWeight: 'bold' }}>{selectedDate.split('-').reverse().join('.')}</div>
+                                <div style={{ fontSize: '32pt', fontWeight: '900', color: '#555', lineHeight: 1 }}>{selectedDate.split('-').reverse().join('.')}</div>
                             </div>
                             
+                            {/* Center: Title Stacked */}
                             <div style={{ flex: 2, textAlign: 'center' }}>
-                                <h1 style={{ fontSize: '24pt', fontWeight: '900', margin: 0, fontFamily: '"Playfair Display", serif', letterSpacing: '1px' }}>ULUIRMAK UYGULAMA OTELİ</h1>
+                                <h1 style={{ fontSize: '28pt', fontWeight: 'bold', margin: 0, fontFamily: '"Playfair Display", serif', textTransform: 'uppercase', lineHeight: '0.9' }}>ULUIRMAK</h1>
+                                <h1 style={{ fontSize: '28pt', fontWeight: 'bold', margin: 0, fontFamily: '"Playfair Display", serif', textTransform: 'uppercase', lineHeight: '1.1' }}>UYGULAMA OTELİ</h1>
                             </div>
 
-                            <div style={{ flex: 1, textAlign: 'right' }}>
-                                <div style={{ fontSize: '9pt', color: '#000' }}>{new Date().toLocaleString('tr-TR')}</div>
+                            {/* Right: Print Time */}
+                            <div style={{ flex: 1, textAlign: 'right', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+                                <div style={{ fontSize: '9pt', color: '#000', fontWeight: 'bold' }}>{new Date().toLocaleString('tr-TR')}</div>
                             </div>
                         </div>
 
-                        {/* Simplified Stats Bar - As requested to be under the header */}
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', fontSize: '11pt', borderBottom: '1px solid #ddd', paddingBottom: '5px' }}>
-                            <span><strong>Toplam Masa:</strong> {stats.count}</span>
-                            <span><strong>Toplam Misafir:</strong> {stats.totalPeople}</span>
-                            <span>{filtered.reduce((a,b)=>a+(b.adultCount||0),0)} Yetişkin / {filtered.reduce((a,b)=>a+(b.childCount||0),0)} Çocuk</span>
+                        {/* Summary Bar */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', padding: '8px 15px', background: '#f0f0f0', borderTop: '2px solid #ccc', borderBottom: '2px solid #ccc', fontSize: '11pt' }}>
+                            <div style={{ flex: 1 }}><strong>Toplam Masa:</strong> {stats.count}</div>
+                            <div style={{ flex: 1, textAlign: 'center', borderLeft: '1px solid #ccc', borderRight: '1px solid #ccc' }}><strong>Toplam Misafir:</strong> {stats.totalPeople}</div>
+                            <div style={{ flex: 1, textAlign: 'right' }}>{filtered.reduce((a,b)=>a+(b.adultCount||0),0)} Yetişkin / {filtered.reduce((a,b)=>a+(b.childCount||0),0)} Çocuk</div>
                         </div>
                     </div>
                     
@@ -830,20 +835,20 @@
                             <tbody>
                                 {filtered.map(res => (
                                     <tr key={res.id}>
-                                        <td style={{fontSize: '14pt', fontWeight: 'bold'}}>G-{res.tableNumber.toString().padStart(2, '0')}</td>
+                                        <td style={{fontSize: '16pt', fontWeight: 'bold', color: '#333', verticalAlign: 'middle'}}>G-{res.tableNumber.toString().padStart(2, '0')}</td>
                                         <td>
-                                            <div style={{fontWeight: 'bold'}}>{res.customerName}</div>
-                                            <div style={{fontSize: '9pt', marginTop: '4px'}}>{res.phone}</div>
+                                            <div style={{fontWeight: '900', fontSize: '11pt', textTransform: 'uppercase'}}>{res.customerName}</div>
+                                            <div style={{fontSize: '9pt', marginTop: '4px', color: '#555'}}>{res.phone}</div>
                                         </td>
-                                        <td style={{textAlign: 'center', fontSize:'11pt'}}>
+                                        <td style={{textAlign: 'center', fontSize:'11pt', verticalAlign: 'middle'}}>
                                             {res.adultCount} Yet. + {res.childCount} Çoc.
                                         </td>
-                                        <td style={{fontStyle: 'italic'}}>{res.note || '-'}</td>
+                                        <td style={{fontStyle: 'italic', fontSize: '10pt'}}>{res.note || '-'}</td>
                                         <td>
                                             {res.orders && res.orders.length > 0 ? (
                                                 <div style={{fontSize: '9pt'}}>
                                                     {res.orders.map((o, i) => (
-                                                        <div key={i}>• <strong>{o.quantity}x</strong> {o.name}</div>
+                                                        <div key={i} style={{marginBottom: '2px'}}>• <strong>{o.quantity}x</strong> {o.name}</div>
                                                     ))}
                                                 </div>
                                             ) : '-'}
