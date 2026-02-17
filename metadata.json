@@ -1,7 +1,5 @@
+
 {
   "name": "Ramazan Sofrası - Rezervasyon Sistemi",
-  "description": "Ramazan ayı için özel olarak tasarlanmış, Firebase tabanlı 30 masalık profesyonel restoran rezervasyon ve yönetim platformu.",
-  "requestFramePermissions": [
-    "camera"
-  ]
+  "description": "Ramazan ayı için özel olarak tasarlanmış, profesyonel restoran rezervasyon ve yönetim platformu."
 }
