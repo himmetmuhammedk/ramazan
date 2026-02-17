@@ -3,7 +3,8 @@ export interface Reservation {
   id: string;
   tableNumber: number;
   customerName: string;
-  peopleCount: number;
+  adultCount: number;
+  childCount: number;
   phone: string;
   date: string; // YYYY-MM-DD format
   note?: string;

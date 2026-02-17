@@ -17,10 +17,11 @@ const ReservationModal: React.FC<ReservationModalProps> = ({
   selectedTableNumber, 
   reservedTableNumbers 
 }) => {
-  // Added 'date' property to formData state to match Omit<Reservation, 'id' | 'timestamp'>
+  // Fix: Replaced peopleCount with adultCount and childCount to match Reservation type
   const [formData, setFormData] = useState({
     customerName: '',
-    peopleCount: 2,
+    adultCount: 2,
+    childCount: 0,
     phone: '',
     tableNumber: 1,
     note: '',
@@ -29,10 +30,11 @@ const ReservationModal: React.FC<ReservationModalProps> = ({
 
   useEffect(() => {
     if (initialData) {
-      // Synchronize 'date' from initialData when editing
+      // Fix: Correctly mapping Reservation properties to state
       setFormData({
         customerName: initialData.customerName,
-        peopleCount: initialData.peopleCount,
+        adultCount: initialData.adultCount,
+        childCount: initialData.childCount,
         phone: initialData.phone,
         tableNumber: initialData.tableNumber,
         note: initialData.note || '',
@@ -46,6 +48,7 @@ const ReservationModal: React.FC<ReservationModalProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.customerName || !formData.phone || !formData.tableNumber || !formData.date) return;
+    // Fix: formData now matches the expected Omit<Reservation, 'id' | 'timestamp'> type
     onSubmit(formData);
   };
 
@@ -106,17 +109,29 @@ const ReservationModal: React.FC<ReservationModalProps> = ({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Kişi Sayısı</label>
+              <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Yetişkin</label>
               <input 
                 required
                 type="number" 
                 min="1" 
                 max="20"
                 className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-amber-500 transition-colors"
-                value={formData.peopleCount}
-                onChange={e => setFormData({...formData, peopleCount: parseInt(e.target.value) || 1})}
+                value={formData.adultCount}
+                onChange={e => setFormData({...formData, adultCount: parseInt(e.target.value) || 1})}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Çocuk</label>
+              <input 
+                required
+                type="number" 
+                min="0" 
+                max="20"
+                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-amber-500 transition-colors"
+                value={formData.childCount}
+                onChange={e => setFormData({...formData, childCount: parseInt(e.target.value) || 0})}
               />
             </div>
             <div>

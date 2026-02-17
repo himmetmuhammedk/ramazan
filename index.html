@@ -10,10 +10,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #0f172a; overflow: hidden; margin: 0; }
-        h1, h2, h3 { font-family: 'Playfair Display', serif; }
-        .custom-scrollbar::-webkit-scrollbar { width: 8px; }
+        h1, h2, i { font-family: 'Playfair Display', serif; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #0f172a; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; border: 2px solid #0f172a; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; border: 1px solid #0f172a; }
         input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
         .animate-fade-in { animation: fadeIn 0.3s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -25,6 +25,54 @@
             background-color: rgba(255, 255, 255, 0.05);
             transform: scale(1.002);
         }
+
+        /* Yazdırma Tasarımı */
+        @media print {
+            body { background: white !important; color: black !important; overflow: visible !important; }
+            #root > div > aside, 
+            #root > div > main > header,
+            .no-print,
+            button,
+            .grid-cols-12 > div:last-child {
+                display: none !important;
+            }
+            #root { height: auto !important; overflow: visible !important; }
+            main { padding: 0 !important; width: 100% !important; height: auto !important; overflow: visible !important; }
+            .bg-slate-900, .bg-slate-950, .bg-slate-800, .bg-slate-800\/40 { background: white !important; }
+            .border-slate-800, .border-slate-700 { border-color: #eee !important; }
+            .text-white, .text-amber-500, .text-emerald-400 { color: black !important; }
+            .rounded-3xl, .rounded-xl { border-radius: 0 !important; }
+            .shadow-2xl, .shadow-xl { box-shadow: none !important; }
+            
+            /* Sadece rezervasyon listesini gösteren başlık */
+            .print-header {
+                display: block !important;
+                margin-bottom: 20px;
+                border-bottom: 2px solid black;
+                padding-bottom: 10px;
+            }
+            .print-header h1 { font-size: 24pt; margin: 0; }
+            .print-header p { margin: 5px 0 0; font-size: 12pt; }
+            
+            .reservation-table {
+                width: 100%;
+                border-collapse: collapse;
+                display: table !important;
+            }
+            .reservation-table th, .reservation-table td {
+                border: 1px solid #ddd;
+                padding: 10px;
+                text-align: left;
+                color: black !important;
+            }
+            .reservation-table th { background-color: #f2f2f2 !important; font-size: 10pt; }
+            .reservation-table td { font-size: 11pt; }
+            
+            /* Orijinal listeyi gizle, yazdırma listesini göster */
+            .main-reservation-list { display: none !important; }
+        }
+        .print-header { display: none; }
+        .reservation-table { display: none; }
     </style>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 <link rel="stylesheet" href="/index.css">
@@ -98,7 +146,7 @@
             '2026-03-19': ["Mantar Çorbası", "Uluırmak Kebabı", "Pirinç Pilavı", "Salata"]
         };
 
-        const Sidebar = ({ stats, onNewReservation, selectedDate }) => {
+        const Sidebar = ({ stats, onNewReservation, onShowAllMenus, onOpenMenuManagement, selectedDate }) => {
             const [isEditingMenu, setIsEditingMenu] = useState(false);
             const [menuItems, setMenuItems] = useState(["...", "...", "...", "..."]);
 
@@ -132,14 +180,20 @@
                         <span className="text-xl font-bold text-white tracking-tight">İftar Rezervasyon</span>
                     </div>
 
-                    <button onClick={onNewReservation} className="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-5 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 text-lg">
-                        <i className="fas fa-plus"></i> Rezervasyon Al
-                    </button>
+                    <div className="space-y-3">
+                        <button onClick={onNewReservation} className="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-5 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 text-lg">
+                            <i className="fas fa-calendar-plus"></i> Rezervasyon Al
+                        </button>
+                        
+                        <button onClick={onOpenMenuManagement} className="w-full bg-slate-800 hover:bg-slate-700 text-amber-500 font-bold py-4 rounded-xl transition-all border border-slate-700 flex items-center justify-center gap-2 text-base">
+                            <i className="fas fa-utensils"></i> Menüler
+                        </button>
+                    </div>
 
                     <div className="space-y-3">
                         <h3 className="text-xs font-bold text-white uppercase tracking-widest">İstatistikler</h3>
                         <div className="bg-slate-800/40 p-4 rounded-lg border border-slate-700/30 flex justify-between items-center">
-                            <p className="text-white text-sm">Beklenen Kişi</p>
+                            <p className="text-white text-sm">Toplam Kişi</p>
                             <span className="text-emerald-400 font-bold text-xl">{stats.totalPeople}</span>
                         </div>
                         <div className="bg-slate-800/40 p-4 rounded-lg border border-slate-700/30 flex justify-between items-center">
@@ -151,9 +205,14 @@
                     <div className="mt-auto pt-6 border-t border-slate-800/50">
                         <div className="flex items-center justify-between mb-3">
                             <h3 className="text-xs font-bold text-white uppercase tracking-widest">Günün Menüsü</h3>
-                            <button onClick={() => isEditingMenu ? saveMenu() : setIsEditingMenu(true)} className="text-amber-500 text-sm hover:text-amber-400">
-                                <i className={`fas ${isEditingMenu ? 'fa-save' : 'fa-pen-to-square'}`}></i>
-                            </button>
+                            <div className="flex gap-2">
+                                <button onClick={onShowAllMenus} title="Tüm Ramazan Menülerini Gör" className="text-slate-400 hover:text-amber-500 transition-colors">
+                                    <i className="fas fa-list-ul"></i>
+                                </button>
+                                <button onClick={() => isEditingMenu ? saveMenu() : setIsEditingMenu(true)} className="text-amber-500 text-sm hover:text-amber-400">
+                                    <i className={`fas ${isEditingMenu ? 'fa-save' : 'fa-pen-to-square'}`}></i>
+                                </button>
+                            </div>
                         </div>
                         <div className="bg-slate-800/50 p-5 rounded-xl border border-amber-500/10">
                             <ul className="space-y-4">
@@ -175,26 +234,168 @@
             );
         };
 
+        const MenuManagementModal = ({ onClose }) => {
+            const [menus, setMenus] = useState({});
+            const [loading, setLoading] = useState(true);
+
+            const INITIAL_MENU_STRUCTURE = {
+                "GÜNÜN MENÜSÜ": [
+                    { name: "GÜNÜN MENÜSÜ", price: "300,00" }
+                ],
+                "İFTAR MENÜLERİ": [
+                    { name: "İFTAR ET SOTE", price: "700,00" },
+                    { name: "İFTAR PİLİÇ SARMA", price: "500,00" },
+                    { name: "İFTAR ROSTO KÖFTE", price: "700,00" },
+                    { name: "İFTAR TAVUK SOTE", price: "500,00" },
+                    { name: "İFTAR ULUIRMAK KEBABI", price: "600,00" },
+                    { name: "İFTAR ULUIRMAK KÖFTE", price: "700,00" }
+                ],
+                "ALAKART MENÜLER": [
+                    { name: "TAVUK SOTE", price: "350,00" },
+                    { name: "TAVUK ŞİŞ", price: "350,00" },
+                    { name: "TAVUK BONFİLE", price: "350,00" },
+                    { name: "MANTAR SOTE", price: "350,00" },
+                    { name: "ET SOTE", price: "400,00" },
+                    { name: "SAC KAVURMA", price: "500,00" },
+                    { name: "KARIŞIK SOTE", price: "400,00" },
+                    { name: "KARIŞIK IZGARA", price: "500,00" },
+                    { name: "IZGARA KÖFTE", price: "400,00" },
+                    { name: "KILIÇARSLAN ÇÖKERTMESİ", price: "350,00" }
+                ],
+                "TATLILAR": [
+                    { name: "HELVADERE", price: "75,00" },
+                    { name: "SÜTLAÇ", price: "65,00" },
+                    { name: "HASANDĞI ZİRVESİ", price: "150,00" },
+                    { name: "TRİLEÇE", price: "80,00" },
+                    { name: "REVANİ", price: "65,00" },
+                    { name: "GÜZ GÜNEŞİ", price: "65,00" },
+                    { name: "GÜLLAÇ", price: "65,00" },
+                    { name: "KALBURABASTI", price: "65,00" },
+                    { name: "PROFİTEROL", price: "150,00" },
+                    { name: "İNCİM", price: "120,00" },
+                    { name: "LATTEM", price: "100,00" },
+                    { name: "İNCELEK", price: "70,00" },
+                    { name: "KADAYIF BURMA", price: "175,00" },
+                    { name: "MAGNOLYA", price: "65,00" }
+                ],
+                "PASTALAR": [
+                    { name: "RULO PASTA", price: "110,00" },
+                    { name: "MOZAİK PASTA", price: "80,00" },
+                    { name: "BALBADEM", price: "140,00" },
+                    { name: "SULTANHANI", price: "160,00" },
+                    { name: "EKLER", price: "25,00" },
+                    { name: "EĞRİ MİNARE", price: "200,00" },
+                    { name: "AŞIKLI HÖYÜK", price: "170,00" },
+                    { name: "EKECİK", price: "170,00" },
+                    { name: "PROFESÖR PASTA", price: "120,00" },
+                    { name: "SARIKARAMAN", price: "200,00" },
+                    { name: "TOPAKKAYA", price: "80,00" },
+                    { name: "BELİSIRMA", price: "100,00" }
+                ]
+            };
+
+            useEffect(() => {
+                const docRef = doc(db, 'settings', 'categorized_menus');
+                const unsubscribe = onSnapshot(docRef, (snap) => {
+                    if (snap.exists()) {
+                        const dbContent = snap.data().content || {};
+                        const mergedContent = { ...INITIAL_MENU_STRUCTURE, ...dbContent };
+                        setMenus(mergedContent);
+                    } else {
+                        setDoc(docRef, { content: INITIAL_MENU_STRUCTURE });
+                        setMenus(INITIAL_MENU_STRUCTURE);
+                    }
+                    setLoading(false);
+                });
+                return () => unsubscribe();
+            }, []);
+
+            const updateItemName = async (category, index, value) => {
+                const newContent = { ...menus };
+                newContent[category][index].name = value;
+                setMenus(newContent);
+                await setDoc(doc(db, 'settings', 'categorized_menus'), { content: newContent });
+            };
+
+            return (
+                <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-slate-950/95 backdrop-blur-xl animate-fade-in">
+                    <div className="w-full max-w-4xl bg-slate-900 border border-slate-700 rounded-[2.5rem] p-8 shadow-2xl flex flex-col max-h-[90vh]">
+                        <div className="flex justify-between items-center mb-8">
+                            <h2 className="text-3xl font-bold text-white flex items-center gap-3">
+                                <div className="bg-amber-500/20 p-3 rounded-2xl">
+                                    <i className="fas fa-utensils text-amber-500"></i>
+                                </div>
+                                Restoran Menüleri
+                            </h2>
+                            <button onClick={onClose} className="w-10 h-10 flex items-center justify-center rounded-full bg-slate-800 text-white hover:bg-red-500 transition-all border border-slate-700">
+                                <i className="fas fa-times"></i>
+                            </button>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto custom-scrollbar pr-4 space-y-10">
+                            {loading ? (
+                                <div className="text-center py-20 text-slate-500">Menüler Yükleniyor...</div>
+                            ) : (
+                                Object.entries(menus).map(([category, items]) => (
+                                    <section key={category} className="space-y-4">
+                                        <div className="flex items-center gap-4">
+                                            <h3 className="text-lg font-black text-amber-500 uppercase tracking-[0.2em]">{category}</h3>
+                                            <div className="flex-1 h-px bg-slate-800"></div>
+                                        </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                            {items.map((item, idx) => (
+                                                <div key={idx} className="flex items-center gap-3 p-3 bg-slate-800/40 rounded-xl border border-slate-700/50 hover:border-slate-600 transition-all group">
+                                                    <input 
+                                                        type="text"
+                                                        className="flex-1 bg-transparent border-none text-white text-sm font-medium focus:ring-0 outline-none"
+                                                        value={item.name}
+                                                        onChange={(e) => updateItemName(category, idx, e.target.value)}
+                                                    />
+                                                    <div className="flex items-center gap-1 bg-slate-900/50 px-3 py-1.5 rounded-lg border border-slate-700/50">
+                                                        <span className="text-xs text-slate-500 font-bold">₺</span>
+                                                        <span className="text-emerald-400 text-right text-xs font-mono font-bold select-none cursor-default">
+                                                            {item.price}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </section>
+                                ))
+                            )}
+                        </div>
+
+                        <div className="mt-8 flex justify-end">
+                            <button onClick={onClose} className="px-10 bg-amber-600 hover:bg-amber-500 text-white font-black py-4 rounded-2xl transition-all shadow-lg uppercase tracking-widest text-sm">
+                                Tamam
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
         const App = () => {
             const [selectedDate, setSelectedDate] = useState('2026-02-19');
             const [reservations, setReservations] = useState([]);
             const [modal, setModal] = useState({ open: false, data: null });
-            const [permissionError, setPermissionError] = useState(false);
+            const [showAllMenus, setShowAllMenus] = useState(false);
+            const [showMenuManagement, setShowMenuManagement] = useState(false);
 
             useEffect(() => {
                 const q = collection(db, 'reservations');
                 const unsubscribe = onSnapshot(q, (snap) => {
                     setReservations(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-                    setPermissionError(false);
-                }, (err) => {
-                    if (err.code === 'permission-denied') setPermissionError(true);
                 });
                 return () => unsubscribe();
             }, []);
 
-            const filtered = useMemo(() => reservations.filter(r => r.date === selectedDate), [reservations, selectedDate]);
+            const filtered = useMemo(() => {
+                return reservations.filter(r => r.date === selectedDate).sort((a, b) => a.tableNumber - b.tableNumber);
+            }, [reservations, selectedDate]);
+
             const stats = { 
-                totalPeople: filtered.reduce((a, b) => a + (b.peopleCount || 0), 0), 
+                totalPeople: filtered.reduce((a, b) => a + (b.adultCount || 0) + (b.childCount || 0), 0), 
                 count: filtered.length 
             };
 
@@ -208,161 +409,126 @@
                     else await addDoc(collection(db, 'reservations'), data);
                     setModal({ open: false, data: null });
                 } catch (e) {
-                    alert("Erişim hatası!");
+                    alert("Hata!");
                 }
             };
 
             const handleDelete = async (e, id) => {
                 e.stopPropagation();
-                if (confirm("Rezervasyon silinecek. Emin misiniz?")) await deleteDoc(doc(db, 'reservations', id));
+                if (confirm("Silinecek?")) await deleteDoc(doc(db, 'reservations', id));
             };
 
             const sendWhatsAppMessage = (res) => {
                 const menu = MENU_DATABASE[res.date] || ["-", "-", "-", "-"];
                 const menuText = menu.map(item => `* ${item}`).join('\n');
                 const formattedDate = res.date.split('-').reverse().join('.');
-                
-                const message = `Sayın ${res.customerName},
+                const peopleInfo = res.childCount > 0 ? `${res.adultCount} Yet., ${res.childCount} Çoc.` : `${res.adultCount} Kişi`;
 
-Gelveri
-${res.peopleCount} Kişi
+                const message = `Sayın ${res.customerName},\n\nGelveri\n${peopleInfo}\n\nTarih: ${formattedDate}\n\nMenü:\n${menuText}\n\nRezervasyonunuz alınmıştır.\n\nUygulama Oteli`;
 
-Rezervasyon Tarihi:
-${formattedDate}
-
-Menü:
-${menuText}
-
-masa talebinize ilişkin rezervasyonunuz oluşturulmuştur.
-
-Masa rezervasyon süresi 30 (otuz) dakikadır. Kullanılmayan rezervasyonlar süre sonrası iptal edilir.
-
-İlgi ve nezaketiniz için teşekkür eder, iyi günler dileriz.
-Saygılarımızla.
-
-Uluırmak Turizm MTAL
-Uygulama Oteli`;
-
-                // Telefon numarasını temizle (sadece rakamlar)
                 let cleanPhone = res.phone.replace(/\D/g, '');
                 if (cleanPhone.startsWith('0')) cleanPhone = '90' + cleanPhone.substring(1);
-                if (cleanPhone.length === 10) cleanPhone = '90' + cleanPhone;
-
-                // wa.me yerine doğrudan api.whatsapp.com veya web.whatsapp.com/send kullanabiliriz.
-                // Pencere ismini sabitleyerek (örneğin 'whatsapp_window') aynı sekmenin tekrar kullanılmasını sağlarız.
-                const waUrl = `https://web.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(message)}`;
-                
-                // Pencere ismi 'whatsapp_window' olarak verildiği sürece, 
-                // tarayıcı zaten açık olan bu isimli sekmeyi bulup orayı günceller.
-                window.open(waUrl, 'whatsapp_window');
+                const waUrl = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(message)}`;
+                window.open(waUrl, '_blank');
             };
+
+            const handlePrint = () => {
+                window.print();
+            };
+
+            const weeklyMenus = useMemo(() => {
+                const entries = Object.entries(MENU_DATABASE).sort(([a], [b]) => a.localeCompare(b));
+                if (entries.length === 0) return [];
+                const firstDate = new Date(entries[0][0]);
+                let firstDayIndex = firstDate.getDay() - 1;
+                if (firstDayIndex === -1) firstDayIndex = 6;
+                const paddedEntries = Array(firstDayIndex).fill(null).concat(entries);
+                const weeks = [];
+                for (let i = 0; i < paddedEntries.length; i += 7) weeks.push(paddedEntries.slice(i, i + 7));
+                return weeks;
+            }, []);
+
+            const DAY_NAMES = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
 
             return (
                 <div className="flex h-screen w-full bg-slate-950 text-white overflow-hidden">
+                    {/* Yazdırma Raporu Başlığı */}
+                    <div className="print-header">
+                        <h1>Ramazan Sofrası - Rezervasyon Listesi</h1>
+                        <p><strong>Tarih:</strong> {selectedDate.split('-').reverse().join('.')} | <strong>Toplam Doluluk:</strong> {stats.count} Masa / {stats.totalPeople} Kişi</p>
+                    </div>
+
                     <main className="flex-1 p-8 flex flex-col overflow-hidden">
-                        <header className="flex justify-between items-center mb-8">
+                        <header className="flex justify-between items-center mb-8 no-print">
                             <div>
                                 <h1 className="text-4xl font-bold text-amber-500">Ramazan Sofrası</h1>
-                                <p className="text-sm text-white/70 font-medium uppercase tracking-[0.2em] mt-2">Profesyonel Rezervasyon Yönetimi</p>
+                                <p className="text-sm text-white/70 font-medium uppercase tracking-[0.2em] mt-2">Profesyonel Yönetim</p>
                             </div>
-                            <div className="flex items-center gap-4 bg-slate-900 border border-slate-700 p-3 rounded-2xl shadow-xl">
-                                <i className="fas fa-calendar-day text-amber-500 text-xl ml-2"></i>
-                                <input type="date" className="bg-transparent border-none text-white text-lg font-bold outline-none cursor-pointer" value={selectedDate} onChange={e => setSelectedDate(e.target.value)} />
+                            <div className="flex items-center gap-3">
+                                <button 
+                                    onClick={handlePrint}
+                                    className="bg-slate-800 hover:bg-slate-700 text-amber-500 border border-slate-700 p-3 rounded-2xl shadow-xl transition-all flex items-center gap-2 font-bold px-5"
+                                >
+                                    <i className="fas fa-print"></i> Yazdır
+                                </button>
+                                <div className="flex items-center gap-4 bg-slate-900 border border-slate-700 p-3 rounded-2xl shadow-xl">
+                                    <i className="fas fa-calendar-day text-amber-500 ml-2"></i>
+                                    <input type="date" className="bg-transparent border-none text-white font-bold outline-none cursor-pointer" value={selectedDate} onChange={e => setSelectedDate(e.target.value)} />
+                                </div>
                             </div>
                         </header>
 
-                        {/* Rezervasyon Listesi (Geliştirilmiş Tablo) */}
-                        <div className="flex-1 overflow-hidden flex flex-col bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl">
-                            {/* Tablo Başlıkları */}
-                            <div className="grid grid-cols-12 gap-4 px-8 py-5 border-b border-slate-800 bg-slate-800/40 text-xs font-black text-white uppercase tracking-[0.15em]">
+                        {/* Yazdırma İçin Rezervasyon Listesi (Sadece Yazıcıda Görünür) */}
+                        <table className="reservation-table">
+                            <thead>
+                                <tr>
+                                    <th>Masa No</th>
+                                    <th>Misafir Adı</th>
+                                    <th>Telefon</th>
+                                    <th>Kişi Sayısı</th>
+                                    <th>Not</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {filtered.length > 0 ? filtered.map(res => (
+                                    <tr key={res.id}>
+                                        <td style={{fontWeight: 'bold'}}>#{res.tableNumber.toString().padStart(2, '0')}</td>
+                                        <td>{res.customerName}</td>
+                                        <td>{res.phone}</td>
+                                        <td>{res.adultCount} Yetişkin {res.childCount > 0 ? `+ ${res.childCount} Çocuk` : ''}</td>
+                                        <td>{res.note || '-'}</td>
+                                    </tr>
+                                )) : (
+                                    <tr>
+                                        <td colSpan="5" style={{textAlign: 'center', padding: '20px'}}>Bu tarihte henüz rezervasyon bulunmamaktadır.</td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+
+                        <div className="flex-1 overflow-hidden flex flex-col bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl main-reservation-list">
+                            <div className="grid grid-cols-12 gap-4 px-8 py-5 border-b border-slate-800 bg-slate-800/40 text-[10px] font-black text-white uppercase tracking-widest">
                                 <div className="col-span-1">Masa</div>
                                 <div className="col-span-2">Durum</div>
-                                <div className="col-span-3">Misafir & İletişim</div>
-                                <div className="col-span-1 text-center">Kişi</div>
-                                <div className="col-span-3">Günün Ana Yemeği</div>
-                                <div className="col-span-2 text-right">Yönetim</div>
+                                <div className="col-span-3">Misafir</div>
+                                <div className="col-span-2 text-center">Kişi</div>
+                                <div className="col-span-2">Ana Yemek</div>
+                                <div className="col-span-2 text-right">İşlem</div>
                             </div>
-                            
-                            {/* Liste İçeriği */}
                             <div className="flex-1 overflow-y-auto custom-scrollbar divide-y divide-slate-800">
                                 {Array.from({ length: 30 }, (_, i) => {
                                     const num = i + 1;
                                     const res = filtered.find(r => r.tableNumber === num);
                                     return (
-                                        <div 
-                                            key={num} 
-                                            onClick={() => setModal({ open: true, data: res || { tableNumber: num } })}
-                                            className={`grid grid-cols-12 gap-4 px-8 py-6 items-center table-row-hover cursor-pointer ${res ? 'bg-amber-500/[0.03]' : ''}`}
-                                        >
-                                            <div className="col-span-1">
-                                                <span className={`text-2xl font-black ${res ? 'text-amber-500' : 'text-white/20'}`}>
-                                                    #{num.toString().padStart(2, '0')}
-                                                </span>
-                                            </div>
-                                            
-                                            <div className="col-span-2">
-                                                {res ? (
-                                                    <span className="inline-flex items-center px-4 py-1.5 rounded-full text-[11px] font-black bg-amber-500/10 text-amber-500 border border-amber-500/30 uppercase tracking-widest">
-                                                        <span className="w-2 h-2 rounded-full bg-amber-500 mr-2.5 animate-pulse shadow-[0_0_8px_rgba(245,158,11,0.5)]"></span> Dolu
-                                                    </span>
-                                                ) : (
-                                                    <span className="inline-flex items-center px-4 py-1.5 rounded-full text-[11px] font-black bg-emerald-500/5 text-emerald-400 border border-emerald-500/20 uppercase tracking-widest">
-                                                        <span className="w-2 h-2 rounded-full bg-emerald-500/40 mr-2.5"></span> Müsait
-                                                    </span>
-                                                )}
-                                            </div>
-
-                                            <div className="col-span-3">
-                                                {res ? (
-                                                    <div className="flex flex-col gap-0.5">
-                                                        <span className="text-lg font-bold text-white leading-tight">{res.customerName}</span>
-                                                        <span className="text-sm text-white/60 font-mono tracking-wider">{res.phone}</span>
-                                                    </div>
-                                                ) : <span className="text-base text-white/10 italic font-medium">Bekleniyor...</span>}
-                                            </div>
-
-                                            <div className="col-span-1 text-center">
-                                                {res ? (
-                                                    <div className="inline-flex flex-col items-center">
-                                                        <span className="text-xl font-black text-white">{res.peopleCount}</span>
-                                                        <span className="text-[10px] text-amber-600 font-bold uppercase tracking-tighter">Kişi</span>
-                                                    </div>
-                                                ) : <span className="text-white/10">-</span>}
-                                            </div>
-
-                                            <div className="col-span-3">
-                                                <div className="flex items-center gap-3">
-                                                    <div className={`p-2 rounded-lg ${res ? 'bg-slate-800' : 'bg-transparent opacity-20'}`}>
-                                                        <i className="fas fa-utensils text-sm text-amber-500"></i>
-                                                    </div>
-                                                    <span className={`text-base font-medium ${res ? 'text-white' : 'text-white/20 italic'}`}>
-                                                        {currentDailyMain}
-                                                    </span>
-                                                </div>
-                                            </div>
-
-                                            <div className="col-span-2 text-right flex justify-end gap-3">
-                                                {res ? (
-                                                    <>
-                                                        <button 
-                                                            onClick={(e) => { e.stopPropagation(); sendWhatsAppMessage(res); }} 
-                                                            className="w-10 h-10 flex items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all border border-emerald-500/20"
-                                                            title="WhatsApp Teyit Gönder"
-                                                        >
-                                                            <i className="fab fa-whatsapp text-lg"></i>
-                                                        </button>
-                                                        <button onClick={(e) => { e.stopPropagation(); setModal({ open: true, data: res }); }} className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-800 text-white hover:bg-amber-600 hover:text-white transition-all border border-slate-700">
-                                                            <i className="fas fa-pen text-sm"></i>
-                                                        </button>
-                                                        <button onClick={(e) => handleDelete(e, res.id)} className="w-10 h-10 flex items-center justify-center rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all border border-red-500/20">
-                                                            <i className="fas fa-trash-alt text-sm"></i>
-                                                        </button>
-                                                    </>
-                                                ) : (
-                                                    <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-800/40 text-white/5 border border-white/5">
-                                                        <i className="fas fa-plus text-sm"></i>
-                                                    </div>
-                                                )}
+                                        <div key={num} onClick={() => setModal({ open: true, data: res || { tableNumber: num } })} className={`grid grid-cols-12 gap-4 px-8 py-5 items-center table-row-hover cursor-pointer ${res ? 'bg-amber-500/[0.03]' : ''}`}>
+                                            <div className="col-span-1"><span className={`text-xl font-black ${res ? 'text-amber-500' : 'text-white/20'}`}>#{num.toString().padStart(2, '0')}</span></div>
+                                            <div className="col-span-2">{res ? <span className="text-[10px] font-bold text-amber-500 uppercase tracking-widest bg-amber-500/10 px-3 py-1 rounded-full">Dolu</span> : <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest bg-emerald-500/5 px-3 py-1 rounded-full">Boş</span>}</div>
+                                            <div className="col-span-3">{res ? <div className="flex flex-col"><span className="font-bold text-sm">{res.customerName}</span><span className="text-xs text-white/50">{res.phone}</span></div> : <span className="text-xs text-white/10">-</span>}</div>
+                                            <div className="col-span-2 text-center">{res ? <span className="font-bold text-emerald-400">{res.adultCount + (res.childCount || 0)}</span> : "-"}</div>
+                                            <div className="col-span-2"><span className={`text-sm ${res ? 'text-white' : 'text-white/10 italic'}`}>{currentDailyMain}</span></div>
+                                            <div className="col-span-2 text-right flex justify-end gap-2">
+                                                {res && <button onClick={(e) => { e.stopPropagation(); sendWhatsAppMessage(res); }} className="p-2 bg-emerald-500/10 text-emerald-500 rounded-lg"><i className="fab fa-whatsapp"></i></button>}
+                                                {res && <button onClick={(e) => handleDelete(e, res.id)} className="p-2 bg-red-500/10 text-red-500 rounded-lg"><i className="fas fa-trash-alt"></i></button>}
                                             </div>
                                         </div>
                                     );
@@ -371,54 +537,73 @@ Uygulama Oteli`;
                         </div>
                     </main>
 
-                    <Sidebar stats={stats} selectedDate={selectedDate} onNewReservation={() => setModal({ open: true, data: null })} />
+                    <Sidebar stats={stats} selectedDate={selectedDate} onNewReservation={() => setModal({ open: true, data: null })} onShowAllMenus={() => setShowAllMenus(true)} onOpenMenuManagement={() => setShowMenuManagement(true)} />
+
+                    {showAllMenus && (
+                        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-950/95 backdrop-blur-xl animate-fade-in no-print">
+                            <div className="w-full max-w-6xl max-h-[90vh] bg-slate-900 border border-slate-700 rounded-[2rem] flex flex-col shadow-2xl overflow-hidden">
+                                <div className="px-6 py-4 border-b border-slate-800 flex justify-between items-center bg-slate-900/50 sticky top-0 z-10">
+                                    <h2 className="text-2xl font-bold text-white flex items-center gap-3"><i className="fas fa-scroll text-amber-500"></i> Ramazan Menü Kartı</h2>
+                                    <button onClick={() => setShowAllMenus(false)} className="w-10 h-10 flex items-center justify-center rounded-full bg-slate-800 text-white"><i className="fas fa-times"></i></button>
+                                </div>
+                                <div className="flex-1 overflow-auto p-4 custom-scrollbar">
+                                    <div className="flex gap-4 min-w-[1300px]">
+                                        <div className="flex flex-col pt-[52px] gap-2 w-28 flex-none">
+                                            {DAY_NAMES.map(day => <div key={day} className="h-[120px] flex items-center justify-end pr-3 text-[10px] text-white/20 font-black uppercase tracking-widest">{day}</div>)}
+                                        </div>
+                                        <div className="grid grid-cols-5 gap-3 flex-1">
+                                            {weeklyMenus.map((week, weekIdx) => (
+                                                <div key={weekIdx} className="flex flex-col gap-2">
+                                                    <div className="text-center h-10 border-b-2 border-amber-500/20 text-[11px] font-black text-amber-500 uppercase tracking-widest">{weekIdx + 1}. HAFTA</div>
+                                                    {week.map((entry, idx) => (
+                                                        <div key={idx} className="h-[120px]">
+                                                            {entry ? (
+                                                                <div className="bg-slate-800/40 p-3 rounded-xl border border-slate-700 h-full overflow-hidden flex flex-col">
+                                                                    <span className="text-[10px] font-mono text-amber-500 mb-1">{entry[0].split('-').reverse().join('.')}</span>
+                                                                    {entry[1].map((item, i) => <p key={i} className={`text-[11px] truncate ${i === 1 ? 'font-bold text-white' : 'text-white/60'}`}>{item}</p>)}
+                                                                </div>
+                                                            ) : <div className="h-full border border-dashed border-slate-800/30 rounded-xl"></div>}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {showMenuManagement && <MenuManagementModal onClose={() => setShowMenuManagement(false)} />}
 
                     {modal.open && (
-                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md animate-fade-in">
-                            <div className="w-full max-w-md bg-slate-900 border border-slate-700 rounded-[2.5rem] p-8 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.8)]">
-                                <h2 className="text-3xl font-bold text-white mb-8 flex items-center gap-3">
-                                    <div className="bg-amber-500/20 p-3 rounded-2xl">
-                                        <i className="fas fa-clipboard-list text-amber-500"></i>
-                                    </div>
-                                    {modal.data?.id ? 'Düzenle' : 'Yeni Kayıt'}
-                                </h2>
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md animate-fade-in no-print">
+                            <div className="w-full max-w-md bg-slate-900 border border-slate-700 rounded-[2rem] p-8 shadow-2xl">
+                                <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3"><i className="fas fa-clipboard-list text-amber-500"></i> Rezervasyon Bilgileri</h2>
                                 <form onSubmit={(e) => { 
                                     e.preventDefault(); 
-                                    const formData = new FormData(e.target);
+                                    const fd = new FormData(e.target);
                                     handleSave({
-                                        customerName: formData.get('name'),
-                                        peopleCount: parseInt(formData.get('people')),
-                                        phone: formData.get('phone'),
-                                        tableNumber: parseInt(formData.get('table')),
+                                        customerName: fd.get('name'),
+                                        adultCount: parseInt(fd.get('adults')),
+                                        childCount: parseInt(fd.get('children')),
+                                        phone: fd.get('phone'),
+                                        tableNumber: parseInt(fd.get('table')),
+                                        note: fd.get('note'),
                                         date: selectedDate
                                     });
-                                }} className="space-y-6">
-                                    <div className="space-y-2">
-                                        <label className="text-xs text-white font-black uppercase ml-1 tracking-widest">Misafir Ad Soyad</label>
-                                        <input required name="name" placeholder="Örn: Mehmet Öz" className="w-full bg-slate-800 border border-slate-700 rounded-2xl px-5 py-4 text-white text-base focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition-all" defaultValue={modal.data?.customerName} />
+                                }} className="space-y-4">
+                                    <div><label className="text-[10px] text-white/50 font-black uppercase tracking-widest ml-1">Misafir</label><input required name="name" className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white outline-none focus:border-amber-500" defaultValue={modal.data?.customerName} /></div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div><label className="text-[10px] text-white/50 font-black uppercase tracking-widest ml-1">Yetişkin</label><input required name="adults" type="number" min="1" className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white" defaultValue={modal.data?.adultCount || 2} /></div>
+                                        <div><label className="text-[10px] text-white/50 font-black uppercase tracking-widest ml-1">Çocuk</label><input name="children" type="number" min="0" className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white" defaultValue={modal.data?.childCount || 0} /></div>
                                     </div>
                                     <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <label className="text-xs text-white font-black uppercase ml-1 tracking-widest">Kişi Sayısı</label>
-                                            <input required name="people" type="number" min="1" className="w-full bg-slate-800 border border-slate-700 rounded-2xl px-5 py-4 text-white text-base focus:border-amber-500 outline-none transition-all" defaultValue={modal.data?.peopleCount || 2} />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <label className="text-xs text-white font-black uppercase ml-1 tracking-widest">Masa No</label>
-                                            <select name="table" className="w-full bg-slate-800 border border-slate-700 rounded-2xl px-5 py-4 text-white text-base focus:border-amber-500 outline-none transition-all appearance-none" defaultValue={modal.data?.tableNumber || 1}>
-                                                {Array.from({length: 30}, (_, i) => i + 1).map(num => (
-                                                    <option key={num} value={num} disabled={modal.data?.tableNumber !== num && filtered.some(r => r.tableNumber === num)} className="bg-slate-900 text-white">Masa {num}</option>
-                                                ))}
-                                            </select>
-                                        </div>
+                                        <div><label className="text-[10px] text-white/50 font-black uppercase tracking-widest ml-1">Masa</label><select name="table" className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white" defaultValue={modal.data?.tableNumber || 1}>{Array.from({length: 30}, (_, i) => i + 1).map(n => <option key={n} value={n} disabled={modal.data?.tableNumber !== n && filtered.some(r => r.tableNumber === n)} className="bg-slate-900">Masa {n}</option>)}</select></div>
+                                        <div><label className="text-[10px] text-white/50 font-black uppercase tracking-widest ml-1">Telefon</label><input required name="phone" className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white font-mono" defaultValue={modal.data?.phone} placeholder="05xx..." /></div>
                                     </div>
-                                    <div className="space-y-2">
-                                        <label className="text-xs text-white font-black uppercase ml-1 tracking-widest">İletişim No</label>
-                                        <input required name="phone" className="w-full bg-slate-800 border border-slate-700 rounded-2xl px-5 py-4 text-white text-base focus:border-amber-500 outline-none transition-all font-mono" defaultValue={modal.data?.phone} placeholder="05xx..." />
-                                    </div>
-                                    <div className="pt-6 flex flex-col gap-3">
-                                        <button className="w-full bg-amber-600 hover:bg-amber-500 text-white font-black py-5 rounded-2xl transition-all shadow-xl text-lg uppercase tracking-widest">Kaydet</button>
-                                        <button type="button" onClick={() => setModal({ open: false, data: null })} className="w-full text-white/50 hover:text-white text-sm py-2 transition-colors font-bold uppercase tracking-widest">Kapat</button>
-                                    </div>
+                                    <div><label className="text-[10px] text-white/50 font-black uppercase tracking-widest ml-1">Not (Opsiyonel)</label><textarea name="note" rows="2" className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white resize-none" defaultValue={modal.data?.note}></textarea></div>
+                                    <div className="pt-4 space-y-2"><button className="w-full bg-amber-600 hover:bg-amber-500 text-white font-black py-4 rounded-xl shadow-xl uppercase tracking-widest">Kaydet</button><button type="button" onClick={() => setModal({ open: false, data: null })} className="w-full text-white/30 text-xs py-2 uppercase tracking-widest">Kapat</button></div>
                                 </form>
                             </div>
                         </div>

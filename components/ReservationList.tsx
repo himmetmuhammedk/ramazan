@@ -15,8 +15,8 @@ const ReservationList: React.FC<ReservationListProps> = ({ tables, onTableClick,
         <div className="col-span-1">Masa</div>
         <div className="col-span-2">Durum</div>
         <div className="col-span-4">Müşteri Bilgisi</div>
-        <div className="col-span-2">Kişi</div>
-        <div className="col-span-3 text-right">İşlemler</div>
+        <div className="col-span-3">Kişi Dağılımı</div>
+        <div className="col-span-2 text-right">İşlemler</div>
       </div>
       <div className="divide-y divide-slate-800">
         {tables.map((table) => (
@@ -63,18 +63,26 @@ const ReservationList: React.FC<ReservationListProps> = ({ tables, onTableClick,
               )}
             </div>
 
-            {/* People Count */}
-            <div className="col-span-2">
+            {/* People Count (Fixed: adult + child separation) */}
+            <div className="col-span-3">
               {table.isReserved && (
-                <div className="flex items-center gap-1.5 text-slate-300 bg-slate-800/50 w-fit px-3 py-1 rounded-lg border border-slate-700/50">
-                  <i className="fas fa-users text-amber-600 text-xs"></i>
-                  <span className="font-bold text-sm">{table.reservation?.peopleCount}</span>
+                <div className="flex items-center gap-2">
+                   <div className="flex items-center gap-1 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                      <i className="fas fa-user text-[10px] text-emerald-500"></i>
+                      <span className="font-bold text-sm text-emerald-400">{table.reservation?.adultCount || 0}</span>
+                   </div>
+                   {(table.reservation?.childCount || 0) > 0 && (
+                     <div className="flex items-center gap-1 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/20">
+                        <i className="fas fa-child text-[10px] text-cyan-500"></i>
+                        <span className="font-bold text-sm text-cyan-400">{table.reservation?.childCount}</span>
+                     </div>
+                   )}
                 </div>
               )}
             </div>
 
             {/* Actions */}
-            <div className="col-span-3 text-right flex justify-end gap-2">
+            <div className="col-span-2 text-right flex justify-end gap-2">
               {table.isReserved ? (
                 <>
                   <button
