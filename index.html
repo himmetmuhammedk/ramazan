@@ -34,10 +34,31 @@
             transform: scale(1.002);
         }
 
+        /* Print Container Hiding (Preserve Loading) 
+           We use this instead of display:none so images inside are loaded by the browser.
+        */
+        .print-header, .print-grid, .name-cards-container { 
+            position: absolute; 
+            width: 1px; 
+            height: 1px; 
+            padding: 0; 
+            margin: -1px; 
+            overflow: hidden; 
+            clip: rect(0,0,0,0); 
+            border: 0;
+            visibility: hidden;
+        }
+
         /* Yazdırma Tasarımı */
         @media print {
             @page { size: portrait; margin: 0; }
-            body { background: white !important; color: black !important; overflow: visible !important; }
+            body { 
+                background: white !important; 
+                color: black !important; 
+                overflow: visible !important; 
+                -webkit-print-color-adjust: exact; 
+                print-color-adjust: exact;
+            }
             #root > div > aside, 
             #root > div > main > header,
             .no-print,
@@ -49,13 +70,41 @@
             main { padding: 0 !important; width: 100% !important; height: auto !important; overflow: visible !important; }
             
             /* Liste Yazdırma Modu */
-            body.print-mode-list .print-header { display: flex !important; flex-direction: column; border-bottom: 2px solid black; padding: 10px; margin-bottom: 10px; }
-            body.print-mode-list .print-grid { display: grid !important; grid-template-columns: repeat(3, 1fr); gap: 5px; padding: 10px; }
+            body.print-mode-list .print-header { 
+                display: flex !important; 
+                flex-direction: column; 
+                border-bottom: 2px solid black; 
+                padding: 10px; 
+                margin-bottom: 10px;
+                
+                /* Reset visual hiding */
+                position: static; width: auto; height: auto; overflow: visible; clip: auto; margin: 0 0 10px 0; visibility: visible;
+            }
+            body.print-mode-list .print-grid { 
+                display: grid !important; 
+                grid-template-columns: repeat(3, 1fr); 
+                gap: 5px; 
+                padding: 10px; 
+                
+                /* Reset visual hiding */
+                position: static; width: auto; height: auto; overflow: visible; clip: auto; margin: 0; visibility: visible;
+            }
             body.print-mode-list .print-card { border: 1px solid #ccc; padding: 8px; background: white !important; }
             body.print-mode-list .print-card-header { display: flex; justify-content: space-between; font-weight: bold; border-bottom: 1px solid #eee; margin-bottom: 4px; }
             
             /* İsim Kartı Yazdırma Modu (PDF Stilinde) */
-            body.print-mode-cards .name-cards-container { display: grid !important; grid-template-columns: 1fr 1fr; grid-auto-rows: 24.5%; gap: 10px; padding: 10mm; height: 297mm; width: 210mm; }
+            body.print-mode-cards .name-cards-container { 
+                display: grid !important; 
+                grid-template-columns: 1fr 1fr; 
+                grid-auto-rows: 24.5%; 
+                gap: 10px; 
+                padding: 10mm; 
+                height: 297mm; 
+                width: 210mm; 
+                
+                /* Reset visual hiding */
+                position: static; overflow: visible; clip: auto; margin: 0; visibility: visible;
+            }
             body.print-mode-cards .name-card { 
                 border: 4px double #4a7c44; 
                 display: flex !important; 
@@ -71,8 +120,6 @@
             body.print-mode-cards .name-card-name { font-family: 'Playfair Display', serif; font-size: 28pt; font-weight: 900; line-height: 1.1; margin-bottom: 30px; text-transform: uppercase; }
             body.print-mode-cards .name-card-logo { width: 120px; height: 120px; object-fit: contain; }
         }
-        
-        .print-header, .print-grid, .name-cards-container { display: none; }
     </style>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 <link rel="stylesheet" href="/index.css">
@@ -596,7 +643,7 @@
                 document.body.classList.add(`print-mode-${mode}`);
                 setTimeout(() => {
                     window.print();
-                }, 100);
+                }, 500);
             };
 
             const sendWhatsAppMessage = (res) => {
@@ -692,7 +739,8 @@
                                     const res = filtered.find(r => r.tableNumber === num);
                                     return (
                                         <div key={num} onClick={() => setModal({ open: true, data: res || { tableNumber: num } })} className={`grid grid-cols-12 gap-4 px-8 py-5 items-center table-row-hover cursor-pointer ${res ? 'bg-amber-500/[0.03]' : ''}`}>
-                                            <div className="col-span-1"><span className={`text-xl font-black ${res ? 'text-amber-500' : 'text-white/20'}`}>G-{num.toString().padStart(2, '0')}</span></div>
+                                            <div className="col-span-1"><span className={`text-xl font-black ${res ? 'text-amber-500' : 'text-white/20'}`}>G-{num.toString().padStart(2, '0')}</span
+></div>
                                             <div className="col-span-2">{res ? <span className="text-[10px] font-bold text-amber-500 uppercase tracking-widest bg-amber-500/10 px-3 py-1 rounded-full">Dolu</span> : <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest bg-emerald-500/5 px-3 py-1 rounded-full">Boş</span>}</div>
                                             <div className="col-span-3">{res ? <div className="flex flex-col"><span className="font-bold text-sm">{res.customerName}</span><span className="text-xs text-white/50">{res.phone}</span></div> : <span className="text-xs text-white/10">-</span>}</div>
                                             <div className="col-span-1 text-center">
