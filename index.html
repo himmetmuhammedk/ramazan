@@ -94,8 +94,7 @@
             /* Liste Yazdırma Modu (Tablo - Yatay) */
             body.print-mode-list .print-header { 
                 display: block !important; 
-                border-bottom: 2px solid black; 
-                padding-bottom: 10px; 
+                /* Removed border-bottom to avoid duplication */
                 margin-bottom: 20px;
                 position: static; width: 100%; height: auto; overflow: visible; clip: auto; visibility: visible;
             }
@@ -120,10 +119,11 @@
             }
 
             body.print-mode-list .print-table th {
-                background-color: #e5e5e5 !important;
+                background-color: #f3f4f6 !important;
                 font-weight: bold;
                 text-align: left;
                 -webkit-print-color-adjust: exact;
+                border-bottom: 2px solid #000;
             }
             
             /* İsim Kartı Yazdırma Modu (PDF Stilinde - Dikey) */
@@ -225,7 +225,7 @@
                 navigator.serviceWorker.register('./sw.js').then(reg => {
                     console.log('SW Kayıt Başarılı:', reg.scope);
                 }).catch(err => {
-                    console.log('SW Kayıt Hatası:', err);
+                    // console.log('SW Kayıt Hatası:', err);
                 });
             });
         }
@@ -793,28 +793,26 @@
                 <div className="flex h-screen w-full bg-slate-950 text-white overflow-hidden">
                     {/* Liste Yazdırma Şablonu (Servis ve Mutfak İçin) */}
                     <div className="print-header">
-                        {/* New Header Layout */}
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '3px solid black', paddingBottom: '15px', marginBottom: '15px' }}>
-                            <div style={{ textAlign: 'left', minWidth: '200px' }}>
-                                <div style={{ fontSize: '10pt', color: '#444', fontWeight: 'bold', textTransform: 'uppercase' }}>REZERVASYON TARİHİ</div>
-                                <div style={{ fontSize: '20pt', fontWeight: '900', letterSpacing: '-1px' }}>{selectedDate.split('-').reverse().join('.')}</div>
+                        {/* New Header Layout requested: Left Date, Center Title, Right Print Time */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '2px solid black', paddingBottom: '10px', marginBottom: '10px' }}>
+                            <div style={{ flex: 1, textAlign: 'left' }}>
+                                <div style={{ fontSize: '16pt', fontWeight: 'bold' }}>{selectedDate.split('-').reverse().join('.')}</div>
                             </div>
                             
-                            <div style={{ flex: 1, textAlign: 'center' }}>
-                                <h1 style={{ fontSize: '28pt', fontWeight: '900', margin: 0, fontFamily: '"Playfair Display", serif', textTransform: 'uppercase', lineHeight: '1' }}>ULUIRMAK UYGULAMA OTELİ</h1>
+                            <div style={{ flex: 2, textAlign: 'center' }}>
+                                <h1 style={{ fontSize: '24pt', fontWeight: '900', margin: 0, fontFamily: '"Playfair Display", serif', letterSpacing: '1px' }}>ULUIRMAK UYGULAMA OTELİ</h1>
                             </div>
 
-                            <div style={{ textAlign: 'right', minWidth: '200px' }}>
-                                <div style={{ fontSize: '10pt', color: '#444', fontWeight: 'bold', textTransform: 'uppercase' }}>YAZDIRMA ZAMANI</div>
-                                <div style={{ fontSize: '12pt', fontWeight: 'bold' }}>{new Date().toLocaleString('tr-TR')}</div>
+                            <div style={{ flex: 1, textAlign: 'right' }}>
+                                <div style={{ fontSize: '9pt', color: '#000' }}>{new Date().toLocaleString('tr-TR')}</div>
                             </div>
                         </div>
 
-                        {/* Summary for Kitchen/Service */}
-                         <div style={{ display: 'flex', gap: '20px', marginBottom: '20px', padding: '8px 15px', background: '#f0f0f0', borderRadius: '6px', border: '1px solid #ccc', fontSize: '11pt' }}>
-                            <div><strong>TOPLAM MASA:</strong> {stats.count}</div>
-                            <div style={{ borderLeft: '1px solid #999', paddingLeft: '20px' }}><strong>TOPLAM MİSAFİR:</strong> {stats.totalPeople}</div>
-                            <div style={{ borderLeft: '1px solid #999', paddingLeft: '20px' }}><strong>DAĞILIM:</strong> {filtered.reduce((a,b)=>a+(b.adultCount||0),0)} Yetişkin, {filtered.reduce((a,b)=>a+(b.childCount||0),0)} Çocuk</div>
+                        {/* Simplified Stats Bar - As requested to be under the header */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', fontSize: '11pt', borderBottom: '1px solid #ddd', paddingBottom: '5px' }}>
+                            <span><strong>Toplam Masa:</strong> {stats.count}</span>
+                            <span><strong>Toplam Misafir:</strong> {stats.totalPeople}</span>
+                            <span>{filtered.reduce((a,b)=>a+(b.adultCount||0),0)} Yetişkin / {filtered.reduce((a,b)=>a+(b.childCount||0),0)} Çocuk</span>
                         </div>
                     </div>
                     
