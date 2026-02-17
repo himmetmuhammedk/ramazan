@@ -1,9 +1,9 @@
 
 import React, { useState, useMemo } from 'react';
-import Sidebar from './components/Sidebar';
-import ReservationList from './components/ReservationList';
-import ReservationModal from './components/ReservationModal';
-import { Reservation, TableStatus } from './types';
+import Sidebar from './components/Sidebar.tsx';
+import ReservationList from './components/ReservationList.tsx';
+import ReservationModal from './components/ReservationModal.tsx';
+import { Reservation, TableStatus } from './types.ts';
 
 const INITIAL_RESERVATIONS: Reservation[] = [];
 
