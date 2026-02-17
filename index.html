@@ -9,30 +9,23 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #0f172a;
-            overflow: hidden;
-            margin: 0;
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; overflow: hidden; margin: 0; }
+        h1, h2, h3 { font-family: 'Playfair Display', serif; }
+        .custom-scrollbar::-webkit-scrollbar { width: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #0f172a; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; border: 2px solid #0f172a; }
+        input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
+        .animate-fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .table-row-hover {
+            transition: all 0.2s ease;
         }
-        h1, h2, h3 {
-            font-family: 'Playfair Display', serif;
-        }
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: #0f172a;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #334155;
-            border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: #475569;
+        .table-row-hover:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+            transform: scale(1.002);
         }
     </style>
-    <!-- Use Babel to transpile JSX/TSX in the browser for static hosting environments like GitHub Pages -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 <link rel="stylesheet" href="/index.css">
 </head>
@@ -40,176 +33,401 @@
     <div id="root"></div>
     
     <script type="importmap">
-    {
-      "imports": {
-        "react": "https://esm.sh/react@19.0.0",
-        "react/": "https://esm.sh/react@19.0.0/",
-        "react-dom": "https://esm.sh/react-dom@19.0.0",
-        "react-dom/": "https://esm.sh/react-dom@19.0.0/",
-        "react-dom/client": "https://esm.sh/react-dom@19.0.0/client"
-      }
-    }
-    </script>
+{
+  "imports": {
+    "react": "https://esm.sh/react@19.0.0",
+    "react-dom": "https://esm.sh/react-dom@19.0.0/client",
+    "firebase/app": "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js",
+    "firebase/firestore": "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js",
+    "react/": "https://esm.sh/react@^19.2.4/"
+  }
+}
+</script>
 
     <script type="text/babel" data-type="module" data-presets="react,typescript">
         import React, { useState, useMemo, useEffect } from 'react';
-        import { createRoot } from 'react-dom/client';
+        import { createRoot } from 'react-dom';
+        import { initializeApp } from 'firebase/app';
+        import { 
+            getFirestore, collection, addDoc, onSnapshot, query, 
+            where, deleteDoc, doc, updateDoc, setDoc, getDoc 
+        } from 'firebase/firestore';
 
-        // --- Components ---
-
-        const Sidebar = ({ stats, onNewReservation, className }) => (
-            <aside className={`w-full md:w-80 h-full bg-slate-900 border-slate-800 p-6 flex flex-col gap-8 overflow-y-auto ${className}`}>
-              <div className="flex items-center gap-3 flex-none">
-                <div className="bg-amber-500/20 p-2 rounded-lg">
-                  <i className="fas fa-moon text-amber-500 text-2xl"></i>
-                </div>
-                <span className="text-xl font-bold text-white tracking-tight">İftar Rezervasyon</span>
-              </div>
-              <button onClick={onNewReservation} className="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-4 px-6 rounded-xl transition-all shadow-lg shadow-amber-900/20 flex items-center justify-center gap-2 flex-none">
-                <i className="fas fa-plus"></i> Rezervasyon Al
-              </button>
-              <div className="space-y-4 flex-none">
-                <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-widest">Canlı İstatistikler</h3>
-                <div className="grid grid-cols-1 gap-3">
-                  <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700/50">
-                    <p className="text-slate-400 text-sm">Toplam Masa</p>
-                    <p className="text-2xl font-bold text-white">30</p>
-                  </div>
-                  <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700/50">
-                    <p className="text-slate-400 text-sm">Dolu Masalar</p>
-                    <p className="text-2xl font-bold text-amber-400">{stats.reservedCount}</p>
-                  </div>
-                  <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700/50">
-                    <p className="text-slate-400 text-sm">Beklenen Kişi</p>
-                    <p className="text-2xl font-bold text-emerald-400">{stats.totalPeople}</p>
-                  </div>
-                </div>
-              </div>
-              <div className="mt-auto space-y-4 flex-none pb-4">
-                <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-widest">Geleneksel İftar Menüsü</h3>
-                <div className="bg-gradient-to-br from-amber-900/40 to-slate-800 p-5 rounded-2xl border border-amber-500/20">
-                  <ul className="space-y-3 text-sm text-slate-200">
-                    <li className="flex gap-2"><i className="fas fa-bowl-hot text-amber-500 mt-1"></i> <span>Süzme Mercimek Çorbası</span></li>
-                    <li className="flex gap-2"><i className="fas fa-utensils text-amber-500 mt-1"></i> <span className="font-medium">Hünkar Beğendi</span></li>
-                    <li className="flex gap-2"><i className="fas fa-bread-slice text-amber-500 mt-1"></i> <span>Tereyağlı Pirinç Pilavı</span></li>
-                    <li className="flex gap-2"><i className="fas fa-cookie text-amber-500 mt-1"></i> <span>Sütlü Nuriye veya Güllaç</span></li>
-                    <li className="flex gap-2"><i className="fas fa-glass-water text-amber-500 mt-1"></i> <span className="italic">Ev Yapımı Osmanlı Şerbeti</span></li>
-                  </ul>
-                </div>
-              </div>
-            </aside>
-        );
-
-        const ReservationList = ({ tables, onTableClick, onCancel }) => (
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
-              <div className="hidden md:grid grid-cols-12 gap-4 px-6 py-4 border-b border-slate-800 bg-slate-800/50 text-xs font-bold text-slate-500 uppercase tracking-widest">
-                <div className="col-span-1">Masa</div><div className="col-span-2">Durum</div><div className="col-span-4">Müşteri Bilgisi</div><div className="col-span-2">Kişi</div><div className="col-span-3 text-right">İşlemler</div>
-              </div>
-              <div className="divide-y divide-slate-800">
-                {tables.map((table) => (
-                  <div key={table.tableNumber} onClick={() => onTableClick(table)} className={`group grid grid-cols-1 md:grid-cols-12 items-center gap-4 px-6 py-4 transition-all cursor-pointer hover:bg-slate-800/40 ${table.isReserved ? 'bg-amber-500/[0.03]' : ''}`}>
-                    <div className="col-span-1 flex items-center gap-3"><span className={`text-xl font-black ${table.isReserved ? 'text-amber-500' : 'text-slate-400'}`}>#{table.tableNumber.toString().padStart(2, '0')}</span></div>
-                    <div className="col-span-2">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold border uppercase tracking-wider ${table.isReserved ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'}`}>
-                        <span className={`w-1.5 h-1.5 rounded-full mr-2 ${table.isReserved ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500'}`}></span> {table.isReserved ? 'Dolu' : 'Boş'}
-                      </span>
-                    </div>
-                    <div className="col-span-4">{table.isReserved ? ( <div className="flex flex-col"><p className="text-white font-semibold text-sm group-hover:text-amber-400 transition-colors">{table.reservation?.customerName}</p><p className="text-slate-500 text-xs font-mono">{table.reservation?.phone}</p></div> ) : ( <span className="text-slate-600 text-sm italic">Masa şu an müsait</span> )}</div>
-                    <div className="col-span-2">{table.isReserved && ( <div className="flex items-center gap-1.5 text-slate-300 bg-slate-800/50 w-fit px-3 py-1 rounded-lg border border-slate-700/50"><i className="fas fa-users text-amber-600 text-xs"></i><span className="font-bold text-sm">{table.reservation?.peopleCount}</span></div> )}</div>
-                    <div className="col-span-3 text-right flex justify-end gap-2">
-                      {table.isReserved ? (
-                        <><button onClick={(e) => { e.stopPropagation(); onTableClick(table); }} className="bg-slate-800 hover:bg-slate-700 text-slate-300 p-2 rounded-lg border border-slate-700"><i className="fas fa-edit text-xs"></i></button>
-                        <button onClick={(e) => { e.stopPropagation(); onCancel(table.tableNumber); }} className="bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white p-2 rounded-lg border border-red-500/20"><i className="fas fa-trash-alt text-xs"></i></button></>
-                      ) : ( <button className="bg-amber-600/10 group-hover:bg-amber-600 text-amber-600 group-hover:text-white px-4 py-2 rounded-lg transition-all text-xs font-bold border border-amber-600/20"><i className="fas fa-calendar-plus mr-2"></i> Rezervasyon</button> )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-        );
-
-        const ReservationModal = ({ onClose, onSubmit, initialData, selectedTableNumber, reservedTableNumbers }) => {
-          const [formData, setFormData] = useState({ customerName: '', peopleCount: 2, phone: '', tableNumber: 1, note: '' });
-          useEffect(() => {
-            if (initialData) setFormData({ customerName: initialData.customerName, peopleCount: initialData.peopleCount, phone: initialData.phone, tableNumber: initialData.tableNumber, note: initialData.note || '' });
-            else if (selectedTableNumber) setFormData(prev => ({ ...prev, tableNumber: selectedTableNumber }));
-          }, [initialData, selectedTableNumber]);
-          const isTableOccupied = (num) => initialData && num === initialData.tableNumber ? false : reservedTableNumbers.includes(num);
-          return (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-              <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden">
-                <div className="px-6 py-4 border-b border-slate-800 flex justify-between items-center text-white">
-                  <h2 className="text-xl font-bold flex items-center gap-2"><i className={`fas ${initialData ? 'fa-edit' : 'fa-calendar-check'} text-amber-500`}></i> {initialData ? 'Düzenle' : 'Yeni Rezervasyon'}</h2>
-                  <button onClick={onClose}><i className="fas fa-times text-slate-400 hover:text-white"></i></button>
-                </div>
-                <form onSubmit={(e) => { e.preventDefault(); onSubmit(formData); }} className="p-6 space-y-4">
-                  <div><label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Müşteri Ad Soyad</label><input required className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white" value={formData.customerName} onChange={e => setFormData({...formData, customerName: e.target.value})} /></div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div><label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Kişi Sayısı</label><input required type="number" min="1" className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white" value={formData.peopleCount} onChange={e => setFormData({...formData, peopleCount: parseInt(e.target.value) || 1})} /></div>
-                    <div><label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Masa No</label><select className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white" value={formData.tableNumber} onChange={e => setFormData({...formData, tableNumber: parseInt(e.target.value)})}>
-                        {Array.from({length: 30}, (_, i) => i + 1).map(num => <option key={num} value={num} disabled={isTableOccupied(num)}>Masa {num} {isTableOccupied(num) ? '(Dolu)' : ''}</option>)}
-                      </select></div>
-                  </div>
-                  <div><label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Telefon</label><input required type="tel" className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} /></div>
-                  <button type="submit" className="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-4 rounded-xl shadow-lg transition-all">{initialData ? 'Güncelle' : 'Kaydet'}</button>
-                </form>
-              </div>
-            </div>
-          );
+        // --- Firebase Yapılandırması ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyC1DEGLU3FraIDI2QqqSFL3hmdB0odiSD4",
+            authDomain: "ramazan-27759.firebaseapp.com",
+            projectId: "ramazan-27759",
+            storageBucket: "ramazan-27759.firebasestorage.app",
+            messagingSenderId: "185596446237",
+            appId: "1:185596446237:web:f4922ecec99593a61fe8f4"
         };
 
-        // --- Main App ---
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const MENU_DATABASE = {
+            '2026-02-19': ["Mantar Çorbası", "Uluırmak Kebabı", "Pirinç Pilavı", "Salata"],
+            '2026-02-20': ["Mercimek Çorbası", "Tas Kebabı", "Bulgur Pilavı", "Salata"],
+            '2026-02-21': ["Domates Çorbası", "İzmir Köfte", "Pirinç Pilavı", "Cacık"],
+            '2026-02-22': ["Ezogelin Çorbası", "Çiftlik Kebabı", "Pirinç Pilavı", "Salata"],
+            '2026-02-23': ["Şehriye Çorbası", "Rosto Köfte", "Pirinç Pilavı", "Salata"],
+            '2026-02-24': ["Mercimek Çorbası", "Saksı Kebabı", "Bulgur Pilavı", "Salata"],
+            '2026-02-25': ["Mantar Çorbası", "Patlıcan Musakka", "Pirinç Pilavı", "Cacık"],
+            '2026-02-26': ["Domates Çorbası", "Et Sote", "Pirinç Pilavı", "Salata"],
+            '2026-02-27': ["Ezogelin Çorbası", "Sebzeli Köfte", "Bulgur Pilavı", "Salata"],
+            '2026-02-28': ["Şehriye Çorbası", "Orman Kebabı", "Bulgur Pilavı", "Salata"],
+            '2026-03-01': ["Mantar Çorbası", "Karnıyarık", "Pirinç Pilavı", "Cacık"],
+            '2026-03-02': ["Mercimek Çorbası", "Uluırmak Kebabı", "Pirinç Pilavı", "Salata"],
+            '2026-03-03': ["Ezogelin Çorbası", "Tas Kebabı", "Bulgur Pilavı", "Salata"],
+            '2026-03-04': ["Domates Çorbası", "İzmir Köfte", "Pirinç Pilavı", "Cacık"],
+            '2026-03-05': ["Şehriye Çorbası", "Çiftlik Kebabı", "Pirinç Pilavı", "Salata"],
+            '2026-03-06': ["Y. Yoğurt Çorbası", "Rosto Köfte", "Bulgur Pilavı", "Salata"],
+            '2026-03-07': ["Şehriye Çorbası", "Saksı Kebabı", "Pirinç Pilavı", "Salata"],
+            '2026-03-08': ["Mantar Çorbası", "Patlıcan Musakka", "Pirinç Pilavı", "Cacık"],
+            '2026-03-09': ["Mercimek Çorbası", "Et Sote", "Pirinç Pilavı", "Salata"],
+            '2026-03-10': ["Ezogelin Çorbası", "Sebzeli Köfte", "Bulgur Pilavı", "Salata"],
+            '2026-03-11': ["Şehriye Çorbası", "Orman Kebabı", "Bulgur Pilavı", "Salata"],
+            '2026-03-12': ["Mantar Çorbası", "Karnıyarık", "Pirinç Pilavı", "Cacık"],
+            '2026-03-13': ["Mercimek Çorbası", "Uluırmak Kebabı", "Pirinç Pilavı", "Salata"],
+            '2026-03-14': ["Ezogelin Çorbası", "Tas Kebabı", "Bulgur Pilavı", "Salata"],
+            '2026-03-15': ["Domates Çorbası", "İzmir Köfte", "Pirinç Pilavı", "Cacık"],
+            '2026-03-16': ["Şehriye Çorbası", "Çiftlik Kebabı", "Pirinç Pilavı", "Salata"],
+            '2026-03-17': ["Ezogelin Çorbası", "Rosto Köfte", "Bulgur Pilavı", "Salata"],
+            '2026-03-18': ["Mercimek Çorbası", "Saksı Kebabı", "Bulgur Pilavı", "Salata"],
+            '2026-03-19': ["Mantar Çorbası", "Uluırmak Kebabı", "Pirinç Pilavı", "Salata"]
+        };
+
+        const Sidebar = ({ stats, onNewReservation, selectedDate }) => {
+            const [isEditingMenu, setIsEditingMenu] = useState(false);
+            const [menuItems, setMenuItems] = useState(["...", "...", "...", "..."]);
+
+            useEffect(() => {
+                const menuId = `menu_${selectedDate}`;
+                const menuDoc = doc(db, 'settings', menuId);
+                const unsubscribe = onSnapshot(menuDoc, (snap) => {
+                    if (snap.exists()) setMenuItems(snap.data().items);
+                    else setMenuItems(MENU_DATABASE[selectedDate] || ["Günün Menüsü", "Henüz Belirlenmedi", "", ""]);
+                }, () => {
+                    setMenuItems(MENU_DATABASE[selectedDate] || ["Günün Menüsü", "Henüz Belirlenmedi", "", ""]);
+                });
+                return () => unsubscribe();
+            }, [selectedDate]);
+
+            const saveMenu = async () => {
+                try {
+                    await setDoc(doc(db, 'settings', `menu_${selectedDate}`), { items: menuItems });
+                    setIsEditingMenu(false);
+                } catch (e) {
+                    alert("Kayıt başarısız!");
+                }
+            };
+
+            return (
+                <aside className="w-full md:w-80 h-full bg-slate-900 border-l border-slate-800 p-6 flex flex-col gap-6 overflow-y-auto">
+                    <div className="flex items-center gap-3">
+                        <div className="bg-amber-500/20 p-2 rounded-lg">
+                            <i className="fas fa-moon text-amber-500 text-2xl"></i>
+                        </div>
+                        <span className="text-xl font-bold text-white tracking-tight">İftar Rezervasyon</span>
+                    </div>
+
+                    <button onClick={onNewReservation} className="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-5 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 text-lg">
+                        <i className="fas fa-plus"></i> Rezervasyon Al
+                    </button>
+
+                    <div className="space-y-3">
+                        <h3 className="text-xs font-bold text-white uppercase tracking-widest">İstatistikler</h3>
+                        <div className="bg-slate-800/40 p-4 rounded-lg border border-slate-700/30 flex justify-between items-center">
+                            <p className="text-white text-sm">Beklenen Kişi</p>
+                            <span className="text-emerald-400 font-bold text-xl">{stats.totalPeople}</span>
+                        </div>
+                        <div className="bg-slate-800/40 p-4 rounded-lg border border-slate-700/30 flex justify-between items-center">
+                            <p className="text-white text-sm">Dolu Masa</p>
+                            <span className="text-amber-400 font-bold text-xl">{stats.count}</span>
+                        </div>
+                    </div>
+
+                    <div className="mt-auto pt-6 border-t border-slate-800/50">
+                        <div className="flex items-center justify-between mb-3">
+                            <h3 className="text-xs font-bold text-white uppercase tracking-widest">Günün Menüsü</h3>
+                            <button onClick={() => isEditingMenu ? saveMenu() : setIsEditingMenu(true)} className="text-amber-500 text-sm hover:text-amber-400">
+                                <i className={`fas ${isEditingMenu ? 'fa-save' : 'fa-pen-to-square'}`}></i>
+                            </button>
+                        </div>
+                        <div className="bg-slate-800/50 p-5 rounded-xl border border-amber-500/10">
+                            <ul className="space-y-4">
+                                {menuItems.map((item, idx) => (
+                                    <li key={idx} className="text-base text-white list-none flex items-center">
+                                        {isEditingMenu ? (
+                                            <input type="text" className="bg-slate-900 border border-slate-700 rounded px-2 py-1 w-full text-sm text-white" value={item} onChange={(e) => {
+                                                const newMenu = [...menuItems]; newMenu[idx] = e.target.value; setMenuItems(newMenu);
+                                            }} />
+                                        ) : (
+                                            <span className={`${idx === 1 ? "font-bold text-amber-400 text-lg" : "text-white"}`}>{item}</span>
+                                        )}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    </div>
+                </aside>
+            );
+        };
 
         const App = () => {
-          const [reservations, setReservations] = useState([]);
-          const [isModalOpen, setIsModalOpen] = useState(false);
-          const [selectedTableNumber, setSelectedTableNumber] = useState(null);
-          const [editingReservation, setEditingReservation] = useState(null);
+            const [selectedDate, setSelectedDate] = useState('2026-02-19');
+            const [reservations, setReservations] = useState([]);
+            const [modal, setModal] = useState({ open: false, data: null });
+            const [permissionError, setPermissionError] = useState(false);
 
-          const totalTables = 30;
-          const tables = useMemo(() => Array.from({ length: totalTables }, (_, i) => {
-            const tableNumber = i + 1;
-            const reservation = reservations.find(r => r.tableNumber === tableNumber);
-            return { tableNumber, isReserved: !!reservation, reservation };
-          }), [reservations]);
+            useEffect(() => {
+                const q = collection(db, 'reservations');
+                const unsubscribe = onSnapshot(q, (snap) => {
+                    setReservations(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+                    setPermissionError(false);
+                }, (err) => {
+                    if (err.code === 'permission-denied') setPermissionError(true);
+                });
+                return () => unsubscribe();
+            }, []);
 
-          const stats = useMemo(() => ({
-            reservedCount: reservations.length,
-            totalPeople: reservations.reduce((acc, r) => acc + r.peopleCount, 0)
-          }), [reservations]);
+            const filtered = useMemo(() => reservations.filter(r => r.date === selectedDate), [reservations, selectedDate]);
+            const stats = { 
+                totalPeople: filtered.reduce((a, b) => a + (b.peopleCount || 0), 0), 
+                count: filtered.length 
+            };
 
-          const handleSave = (data) => {
-            if (editingReservation) setReservations(prev => prev.map(r => r.id === editingReservation.id ? { ...r, ...data } : r));
-            else setReservations(prev => [...prev, { ...data, id: Math.random().toString(36).substr(2, 9), timestamp: new Date() }]);
-            setIsModalOpen(false);
-          };
+            const currentDailyMain = useMemo(() => {
+                return MENU_DATABASE[selectedDate]?.[1] || "Belli Değil";
+            }, [selectedDate]);
 
-          return (
-            <div className="flex flex-col md:flex-row h-screen w-full bg-slate-950 text-slate-100 overflow-hidden">
-              <main className="flex-1 p-4 md:p-6 flex flex-col min-w-0 order-1 overflow-hidden">
-                <header className="flex-none mb-6 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                  <div><h1 className="text-3xl md:text-4xl font-bold text-amber-500 mb-1">Ramazan Sofrası</h1><p className="text-slate-400 text-sm md:text-base">Masa Yönetim Paneli</p></div>
-                  <div className="bg-slate-900 border border-slate-800 p-3 md:p-4 rounded-xl flex items-center gap-4 self-start lg:self-auto">
-                    <div className="text-right"><p className="text-[10px] uppercase text-slate-500 font-bold">Kalan Masa</p><p className="text-xl md:text-2xl font-bold text-emerald-400">{totalTables - stats.reservedCount}</p></div>
-                    <div className="w-px h-8 bg-slate-800"></div>
-                    <div className="text-right"><p className="text-[10px] uppercase text-slate-500 font-bold">Dolan Masa</p><p className="text-xl md:text-2xl font-bold text-amber-400">{stats.reservedCount}</p></div>
-                  </div>
-                </header>
-                <div className="flex-1 overflow-y-auto min-h-0 pr-1 custom-scrollbar">
-                  <ReservationList tables={tables} onCancel={(num) => window.confirm('İptal edilsin mi?') && setReservations(r => r.filter(x => x.tableNumber !== num))} onTableClick={(t) => { if (t.isReserved) setEditingReservation(t.reservation); else setEditingReservation(null); setSelectedTableNumber(t.tableNumber); setIsModalOpen(true); }} />
+            const handleSave = async (data) => {
+                try {
+                    if (modal.data?.id) await updateDoc(doc(db, 'reservations', modal.data.id), data);
+                    else await addDoc(collection(db, 'reservations'), data);
+                    setModal({ open: false, data: null });
+                } catch (e) {
+                    alert("Erişim hatası!");
+                }
+            };
+
+            const handleDelete = async (e, id) => {
+                e.stopPropagation();
+                if (confirm("Rezervasyon silinecek. Emin misiniz?")) await deleteDoc(doc(db, 'reservations', id));
+            };
+
+            const sendWhatsAppMessage = (res) => {
+                const menu = MENU_DATABASE[res.date] || ["-", "-", "-", "-"];
+                const menuText = menu.map(item => `* ${item}`).join('\n');
+                const formattedDate = res.date.split('-').reverse().join('.');
+                
+                const message = `Sayın ${res.customerName},
+
+Gelveri
+${res.peopleCount} Kişi
+
+Rezervasyon Tarihi:
+${formattedDate}
+
+Menü:
+${menuText}
+
+masa talebinize ilişkin rezervasyonunuz oluşturulmuştur.
+
+Masa rezervasyon süresi 30 (otuz) dakikadır. Kullanılmayan rezervasyonlar süre sonrası iptal edilir.
+
+İlgi ve nezaketiniz için teşekkür eder, iyi günler dileriz.
+Saygılarımızla.
+
+Uluırmak Turizm MTAL
+Uygulama Oteli`;
+
+                // Telefon numarasını temizle (sadece rakamlar)
+                let cleanPhone = res.phone.replace(/\D/g, '');
+                if (cleanPhone.startsWith('0')) cleanPhone = '90' + cleanPhone.substring(1);
+                if (cleanPhone.length === 10) cleanPhone = '90' + cleanPhone;
+
+                // wa.me yerine doğrudan api.whatsapp.com veya web.whatsapp.com/send kullanabiliriz.
+                // Pencere ismini sabitleyerek (örneğin 'whatsapp_window') aynı sekmenin tekrar kullanılmasını sağlarız.
+                const waUrl = `https://web.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(message)}`;
+                
+                // Pencere ismi 'whatsapp_window' olarak verildiği sürece, 
+                // tarayıcı zaten açık olan bu isimli sekmeyi bulup orayı günceller.
+                window.open(waUrl, 'whatsapp_window');
+            };
+
+            return (
+                <div className="flex h-screen w-full bg-slate-950 text-white overflow-hidden">
+                    <main className="flex-1 p-8 flex flex-col overflow-hidden">
+                        <header className="flex justify-between items-center mb-8">
+                            <div>
+                                <h1 className="text-4xl font-bold text-amber-500">Ramazan Sofrası</h1>
+                                <p className="text-sm text-white/70 font-medium uppercase tracking-[0.2em] mt-2">Profesyonel Rezervasyon Yönetimi</p>
+                            </div>
+                            <div className="flex items-center gap-4 bg-slate-900 border border-slate-700 p-3 rounded-2xl shadow-xl">
+                                <i className="fas fa-calendar-day text-amber-500 text-xl ml-2"></i>
+                                <input type="date" className="bg-transparent border-none text-white text-lg font-bold outline-none cursor-pointer" value={selectedDate} onChange={e => setSelectedDate(e.target.value)} />
+                            </div>
+                        </header>
+
+                        {/* Rezervasyon Listesi (Geliştirilmiş Tablo) */}
+                        <div className="flex-1 overflow-hidden flex flex-col bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl">
+                            {/* Tablo Başlıkları */}
+                            <div className="grid grid-cols-12 gap-4 px-8 py-5 border-b border-slate-800 bg-slate-800/40 text-xs font-black text-white uppercase tracking-[0.15em]">
+                                <div className="col-span-1">Masa</div>
+                                <div className="col-span-2">Durum</div>
+                                <div className="col-span-3">Misafir & İletişim</div>
+                                <div className="col-span-1 text-center">Kişi</div>
+                                <div className="col-span-3">Günün Ana Yemeği</div>
+                                <div className="col-span-2 text-right">Yönetim</div>
+                            </div>
+                            
+                            {/* Liste İçeriği */}
+                            <div className="flex-1 overflow-y-auto custom-scrollbar divide-y divide-slate-800">
+                                {Array.from({ length: 30 }, (_, i) => {
+                                    const num = i + 1;
+                                    const res = filtered.find(r => r.tableNumber === num);
+                                    return (
+                                        <div 
+                                            key={num} 
+                                            onClick={() => setModal({ open: true, data: res || { tableNumber: num } })}
+                                            className={`grid grid-cols-12 gap-4 px-8 py-6 items-center table-row-hover cursor-pointer ${res ? 'bg-amber-500/[0.03]' : ''}`}
+                                        >
+                                            <div className="col-span-1">
+                                                <span className={`text-2xl font-black ${res ? 'text-amber-500' : 'text-white/20'}`}>
+                                                    #{num.toString().padStart(2, '0')}
+                                                </span>
+                                            </div>
+                                            
+                                            <div className="col-span-2">
+                                                {res ? (
+                                                    <span className="inline-flex items-center px-4 py-1.5 rounded-full text-[11px] font-black bg-amber-500/10 text-amber-500 border border-amber-500/30 uppercase tracking-widest">
+                                                        <span className="w-2 h-2 rounded-full bg-amber-500 mr-2.5 animate-pulse shadow-[0_0_8px_rgba(245,158,11,0.5)]"></span> Dolu
+                                                    </span>
+                                                ) : (
+                                                    <span className="inline-flex items-center px-4 py-1.5 rounded-full text-[11px] font-black bg-emerald-500/5 text-emerald-400 border border-emerald-500/20 uppercase tracking-widest">
+                                                        <span className="w-2 h-2 rounded-full bg-emerald-500/40 mr-2.5"></span> Müsait
+                                                    </span>
+                                                )}
+                                            </div>
+
+                                            <div className="col-span-3">
+                                                {res ? (
+                                                    <div className="flex flex-col gap-0.5">
+                                                        <span className="text-lg font-bold text-white leading-tight">{res.customerName}</span>
+                                                        <span className="text-sm text-white/60 font-mono tracking-wider">{res.phone}</span>
+                                                    </div>
+                                                ) : <span className="text-base text-white/10 italic font-medium">Bekleniyor...</span>}
+                                            </div>
+
+                                            <div className="col-span-1 text-center">
+                                                {res ? (
+                                                    <div className="inline-flex flex-col items-center">
+                                                        <span className="text-xl font-black text-white">{res.peopleCount}</span>
+                                                        <span className="text-[10px] text-amber-600 font-bold uppercase tracking-tighter">Kişi</span>
+                                                    </div>
+                                                ) : <span className="text-white/10">-</span>}
+                                            </div>
+
+                                            <div className="col-span-3">
+                                                <div className="flex items-center gap-3">
+                                                    <div className={`p-2 rounded-lg ${res ? 'bg-slate-800' : 'bg-transparent opacity-20'}`}>
+                                                        <i className="fas fa-utensils text-sm text-amber-500"></i>
+                                                    </div>
+                                                    <span className={`text-base font-medium ${res ? 'text-white' : 'text-white/20 italic'}`}>
+                                                        {currentDailyMain}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            <div className="col-span-2 text-right flex justify-end gap-3">
+                                                {res ? (
+                                                    <>
+                                                        <button 
+                                                            onClick={(e) => { e.stopPropagation(); sendWhatsAppMessage(res); }} 
+                                                            className="w-10 h-10 flex items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all border border-emerald-500/20"
+                                                            title="WhatsApp Teyit Gönder"
+                                                        >
+                                                            <i className="fab fa-whatsapp text-lg"></i>
+                                                        </button>
+                                                        <button onClick={(e) => { e.stopPropagation(); setModal({ open: true, data: res }); }} className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-800 text-white hover:bg-amber-600 hover:text-white transition-all border border-slate-700">
+                                                            <i className="fas fa-pen text-sm"></i>
+                                                        </button>
+                                                        <button onClick={(e) => handleDelete(e, res.id)} className="w-10 h-10 flex items-center justify-center rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all border border-red-500/20">
+                                                            <i className="fas fa-trash-alt text-sm"></i>
+                                                        </button>
+                                                    </>
+                                                ) : (
+                                                    <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-800/40 text-white/5 border border-white/5">
+                                                        <i className="fas fa-plus text-sm"></i>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </main>
+
+                    <Sidebar stats={stats} selectedDate={selectedDate} onNewReservation={() => setModal({ open: true, data: null })} />
+
+                    {modal.open && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md animate-fade-in">
+                            <div className="w-full max-w-md bg-slate-900 border border-slate-700 rounded-[2.5rem] p-8 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.8)]">
+                                <h2 className="text-3xl font-bold text-white mb-8 flex items-center gap-3">
+                                    <div className="bg-amber-500/20 p-3 rounded-2xl">
+                                        <i className="fas fa-clipboard-list text-amber-500"></i>
+                                    </div>
+                                    {modal.data?.id ? 'Düzenle' : 'Yeni Kayıt'}
+                                </h2>
+                                <form onSubmit={(e) => { 
+                                    e.preventDefault(); 
+                                    const formData = new FormData(e.target);
+                                    handleSave({
+                                        customerName: formData.get('name'),
+                                        peopleCount: parseInt(formData.get('people')),
+                                        phone: formData.get('phone'),
+                                        tableNumber: parseInt(formData.get('table')),
+                                        date: selectedDate
+                                    });
+                                }} className="space-y-6">
+                                    <div className="space-y-2">
+                                        <label className="text-xs text-white font-black uppercase ml-1 tracking-widest">Misafir Ad Soyad</label>
+                                        <input required name="name" placeholder="Örn: Mehmet Öz" className="w-full bg-slate-800 border border-slate-700 rounded-2xl px-5 py-4 text-white text-base focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition-all" defaultValue={modal.data?.customerName} />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <label className="text-xs text-white font-black uppercase ml-1 tracking-widest">Kişi Sayısı</label>
+                                            <input required name="people" type="number" min="1" className="w-full bg-slate-800 border border-slate-700 rounded-2xl px-5 py-4 text-white text-base focus:border-amber-500 outline-none transition-all" defaultValue={modal.data?.peopleCount || 2} />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-xs text-white font-black uppercase ml-1 tracking-widest">Masa No</label>
+                                            <select name="table" className="w-full bg-slate-800 border border-slate-700 rounded-2xl px-5 py-4 text-white text-base focus:border-amber-500 outline-none transition-all appearance-none" defaultValue={modal.data?.tableNumber || 1}>
+                                                {Array.from({length: 30}, (_, i) => i + 1).map(num => (
+                                                    <option key={num} value={num} disabled={modal.data?.tableNumber !== num && filtered.some(r => r.tableNumber === num)} className="bg-slate-900 text-white">Masa {num}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-xs text-white font-black uppercase ml-1 tracking-widest">İletişim No</label>
+                                        <input required name="phone" className="w-full bg-slate-800 border border-slate-700 rounded-2xl px-5 py-4 text-white text-base focus:border-amber-500 outline-none transition-all font-mono" defaultValue={modal.data?.phone} placeholder="05xx..." />
+                                    </div>
+                                    <div className="pt-6 flex flex-col gap-3">
+                                        <button className="w-full bg-amber-600 hover:bg-amber-500 text-white font-black py-5 rounded-2xl transition-all shadow-xl text-lg uppercase tracking-widest">Kaydet</button>
+                                        <button type="button" onClick={() => setModal({ open: false, data: null })} className="w-full text-white/50 hover:text-white text-sm py-2 transition-colors font-bold uppercase tracking-widest">Kapat</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    )}
                 </div>
-              </main>
-              <Sidebar stats={stats} onNewReservation={() => { setEditingReservation(null); setSelectedTableNumber(null); setIsModalOpen(true); }} className="order-2 border-t md:border-t-0 md:border-l" />
-              {isModalOpen && <ReservationModal onClose={() => setIsModalOpen(false)} onSubmit={handleSave} initialData={editingReservation || undefined} selectedTableNumber={selectedTableNumber} reservedTableNumbers={reservations.map(r => r.tableNumber)} />}
-            </div>
-          );
+            );
         };
 
-        const rootElement = document.getElementById('root');
-        if (rootElement) {
-          const root = createRoot(rootElement);
-          root.render(<App />);
-        }
+        createRoot(document.getElementById('root')).render(<App />);
     </script>
 <script type="module" src="/index.tsx"></script>
 </body>

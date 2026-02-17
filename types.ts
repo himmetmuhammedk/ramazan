@@ -5,6 +5,7 @@ export interface Reservation {
   customerName: string;
   peopleCount: number;
   phone: string;
+  date: string; // YYYY-MM-DD format
   note?: string;
   timestamp: any;
 }

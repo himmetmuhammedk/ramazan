@@ -17,22 +17,26 @@ const ReservationModal: React.FC<ReservationModalProps> = ({
   selectedTableNumber, 
   reservedTableNumbers 
 }) => {
+  // Added 'date' property to formData state to match Omit<Reservation, 'id' | 'timestamp'>
   const [formData, setFormData] = useState({
     customerName: '',
     peopleCount: 2,
     phone: '',
     tableNumber: 1,
-    note: ''
+    note: '',
+    date: new Date().toISOString().split('T')[0]
   });
 
   useEffect(() => {
     if (initialData) {
+      // Synchronize 'date' from initialData when editing
       setFormData({
         customerName: initialData.customerName,
         peopleCount: initialData.peopleCount,
         phone: initialData.phone,
         tableNumber: initialData.tableNumber,
-        note: initialData.note || ''
+        note: initialData.note || '',
+        date: initialData.date
       });
     } else if (selectedTableNumber) {
       setFormData(prev => ({ ...prev, tableNumber: selectedTableNumber }));
@@ -41,7 +45,7 @@ const ReservationModal: React.FC<ReservationModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.customerName || !formData.phone || !formData.tableNumber) return;
+    if (!formData.customerName || !formData.phone || !formData.tableNumber || !formData.date) return;
     onSubmit(formData);
   };
 
@@ -80,6 +84,30 @@ const ReservationModal: React.FC<ReservationModalProps> = ({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
+              <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Rezervasyon Tarihi</label>
+              <input 
+                required
+                type="date" 
+                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-amber-500 transition-colors"
+                value={formData.date}
+                onChange={e => setFormData({...formData, date: e.target.value})}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Telefon Numarası</label>
+              <input 
+                required
+                type="tel" 
+                placeholder="05xx xxx xx xx"
+                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-amber-500 transition-colors"
+                value={formData.phone}
+                onChange={e => setFormData({...formData, phone: e.target.value})}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
               <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Kişi Sayısı</label>
               <input 
                 required
@@ -106,18 +134,6 @@ const ReservationModal: React.FC<ReservationModalProps> = ({
                 ))}
               </select>
             </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Telefon Numarası</label>
-            <input 
-              required
-              type="tel" 
-              placeholder="05xx xxx xx xx"
-              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-amber-500 transition-colors"
-              value={formData.phone}
-              onChange={e => setFormData({...formData, phone: e.target.value})}
-            />
           </div>
 
           <div>
