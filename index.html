@@ -44,15 +44,14 @@
             .rounded-3xl, .rounded-xl { border-radius: 0 !important; }
             .shadow-2xl, .shadow-xl { box-shadow: none !important; }
             
-            /* Sadece rezervasyon listesini gösteren başlık */
             .print-header {
                 display: block !important;
                 margin-bottom: 20px;
                 border-bottom: 2px solid black;
                 padding-bottom: 10px;
             }
-            .print-header h1 { font-size: 24pt; margin: 0; }
-            .print-header p { margin: 5px 0 0; font-size: 12pt; }
+            .print-header h1 { font-size: 24pt; margin: 0; color: black !important; }
+            .print-header p { margin: 5px 0 0; font-size: 12pt; color: black !important; }
             
             .reservation-table {
                 width: 100%;
@@ -60,16 +59,27 @@
                 display: table !important;
             }
             .reservation-table th, .reservation-table td {
-                border: 1px solid #ddd;
-                padding: 10px;
+                border-bottom: 1px solid #ddd;
+                padding: 12px 8px;
                 text-align: left;
                 color: black !important;
+                background: white !important;
             }
-            .reservation-table th { background-color: #f2f2f2 !important; font-size: 10pt; }
-            .reservation-table td { font-size: 11pt; }
-            
-            /* Orijinal listeyi gizle, yazdırma listesini göster */
+            .reservation-table th { 
+                background-color: #f8fafc !important; 
+                font-size: 9pt; 
+                text-transform: uppercase; 
+                letter-spacing: 0.05em;
+                font-weight: 800;
+            }
+            .reservation-table td { font-size: 10pt; }
             .main-reservation-list { display: none !important; }
+
+            .print-masa-no { font-weight: 900; font-size: 14pt; }
+            .print-customer-name { font-weight: 700; display: block; }
+            .print-phone { font-size: 9pt; color: #666 !important; }
+            .print-stat-item { display: inline-block; margin-right: 10px; border: 1px solid #ccc; padding: 2px 6px; border-radius: 4px; }
+            .print-stat-label { font-size: 8pt; font-weight: 800; margin-left: 2px; }
         }
         .print-header { display: none; }
         .reservation-table { display: none; }
@@ -101,7 +111,6 @@
             where, deleteDoc, doc, updateDoc, setDoc, getDoc 
         } from 'firebase/firestore';
 
-        // --- Firebase Yapılandırması ---
         const firebaseConfig = {
             apiKey: "AIzaSyC1DEGLU3FraIDI2QqqSFL3hmdB0odiSD4",
             authDomain: "ramazan-27759.firebaseapp.com",
@@ -146,6 +155,8 @@
             '2026-03-19': ["Mantar Çorbası", "Uluırmak Kebabı", "Pirinç Pilavı", "Salata"]
         };
 
+        const CATEGORY_ORDER = ["GÜNÜN MENÜSÜ", "İFTAR MENÜLERİ", "ALAKART MENÜLER", "TATLILAR", "PASTALAR"];
+
         const Sidebar = ({ stats, onNewReservation, onShowAllMenus, onOpenMenuManagement, selectedDate }) => {
             const [isEditingMenu, setIsEditingMenu] = useState(false);
             const [menuItems, setMenuItems] = useState(["...", "...", "...", "..."]);
@@ -172,7 +183,7 @@
             };
 
             return (
-                <aside className="w-full md:w-80 h-full bg-slate-900 border-l border-slate-800 p-6 flex flex-col gap-6 overflow-y-auto">
+                <aside className="w-full md:w-80 h-full bg-slate-900 border-l border-slate-800 p-6 flex flex-col gap-6 overflow-y-auto no-print">
                     <div className="flex items-center gap-3">
                         <div className="bg-amber-500/20 p-2 rounded-lg">
                             <i className="fas fa-moon text-amber-500 text-2xl"></i>
@@ -234,63 +245,229 @@
             );
         };
 
+        const ReservationModal = ({ data, selectedDate, categorizedMenus, onClose, onSave, allReservations }) => {
+            const [step, setStep] = useState(1); 
+            const [customerName, setCustomerName] = useState(data?.customerName || '');
+            const [adultCount, setAdultCount] = useState(data?.adultCount || 2);
+            const [childCount, setChildCount] = useState(data?.childCount || 0);
+            const [phone, setPhone] = useState(data?.phone || '');
+            const [tableNumber, setTableNumber] = useState(data?.tableNumber || 1);
+            const [note, setNote] = useState(data?.note || '');
+            const [orders, setOrders] = useState(data?.orders || []);
+
+            const totalPrice = useMemo(() => {
+                return orders.reduce((sum, item) => {
+                    const priceVal = parseFloat(item.price.replace('.', '').replace(',', '.'));
+                    return sum + (priceVal * item.quantity);
+                }, 0);
+            }, [orders]);
+
+            const handleAddItem = (item) => {
+                const existing = orders.find(o => o.name === item.name);
+                if (existing) {
+                    setOrders(orders.map(o => o.name === item.name ? { ...o, quantity: o.quantity + 1 } : o));
+                } else {
+                    setOrders([...orders, { ...item, quantity: 1 }]);
+                }
+            };
+
+            const handleRemoveItem = (name) => {
+                const existing = orders.find(o => o.name === name);
+                if (existing && existing.quantity > 1) {
+                    setOrders(orders.map(o => o.name === name ? { ...o, quantity: o.quantity - 1 } : o));
+                } else {
+                    setOrders(orders.filter(o => o.name !== name));
+                }
+            };
+
+            const sortedMenuCategories = useMemo(() => {
+                return Object.entries(categorizedMenus).sort(([a], [b]) => {
+                    const indexA = CATEGORY_ORDER.indexOf(a);
+                    const indexB = CATEGORY_ORDER.indexOf(b);
+                    return (indexA === -1 ? 99 : indexA) - (indexB === -1 ? 99 : indexB);
+                });
+            }, [categorizedMenus]);
+
+            return (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md animate-fade-in no-print">
+                    <div className="w-full max-w-5xl bg-slate-900 border border-slate-700 rounded-[2.5rem] shadow-2xl flex flex-col h-[90vh]">
+                        <div className="px-8 py-6 border-b border-slate-800 flex justify-between items-center flex-none">
+                            <h2 className="text-2xl font-bold text-white flex items-center gap-3">
+                                <i className={`fas ${data?.id ? 'fa-edit' : 'fa-calendar-plus'} text-amber-500`}></i>
+                                {data?.id ? 'Rezervasyonu Düzenle' : 'Yeni Rezervasyon'}
+                            </h2>
+                            <div className="flex gap-2">
+                                <button onClick={() => setStep(1)} className={`px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${step === 1 ? 'bg-amber-600 text-white' : 'bg-slate-800 text-slate-500 hover:text-white'}`}>1. Misafir Bilgileri</button>
+                                <button onClick={() => setStep(2)} className={`px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${step === 2 ? 'bg-amber-600 text-white' : 'bg-slate-800 text-slate-500 hover:text-white'}`}>2. Sipariş Oluştur</button>
+                            </div>
+                        </div>
+
+                        <div className="flex-1 overflow-hidden p-8 flex flex-col">
+                            {step === 1 ? (
+                                <div className="space-y-6 max-w-xl mx-auto w-full overflow-y-auto custom-scrollbar pr-2">
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] text-white/50 font-black uppercase tracking-widest ml-1">Misafir Ad Soyad</label>
+                                        <input required value={customerName} onChange={e => setCustomerName(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-2xl px-5 py-4 text-white outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all" placeholder="Örn: Ahmet Yılmaz" />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-6">
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] text-white/50 font-black uppercase tracking-widest ml-1">Yetişkin Sayısı</label>
+                                            <input type="number" min="1" value={adultCount} onChange={e => setAdultCount(parseInt(e.target.value))} className="w-full bg-slate-800 border border-slate-700 rounded-2xl px-5 py-4 text-white" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] text-white/50 font-black uppercase tracking-widest ml-1">Çocuk Sayısı</label>
+                                            <input type="number" min="0" value={childCount} onChange={e => setChildCount(parseInt(e.target.value))} className="w-full bg-slate-800 border border-slate-700 rounded-2xl px-5 py-4 text-white" />
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-6">
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] text-white/50 font-black uppercase tracking-widest ml-1">Masa Seçimi</label>
+                                            <select value={tableNumber} onChange={e => setTableNumber(parseInt(e.target.value))} className="w-full bg-slate-800 border border-slate-700 rounded-2xl px-5 py-4 text-white">{Array.from({length: 30}, (_, i) => i + 1).map(n => <option key={n} value={n} disabled={data?.tableNumber !== n && allReservations.some(r => r.tableNumber === n)} className="bg-slate-900">Masa G-{n.toString().padStart(2, '0')}</option>)}</select>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] text-white/50 font-black uppercase tracking-widest ml-1">İletişim Telefonu</label>
+                                            <input required value={phone} onChange={e => setPhone(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-2xl px-5 py-4 text-white font-mono" placeholder="05xx..." />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] text-white/50 font-black uppercase tracking-widest ml-1">Özel Notlar</label>
+                                        <textarea rows="3" value={note} onChange={e => setNote(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-2xl px-5 py-4 text-white resize-none outline-none focus:border-amber-500" placeholder="Alerji, çocuk sandalyesi vb."></textarea>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 md:grid-cols-12 gap-8 h-full overflow-hidden">
+                                    <div className="md:col-span-8 flex flex-col h-full overflow-hidden">
+                                        <div className="flex items-center gap-4 mb-4 flex-none">
+                                            <h3 className="text-sm font-bold text-amber-500 uppercase tracking-[0.2em]">Restoran Menüsü</h3>
+                                            <div className="flex-1 h-px bg-slate-800"></div>
+                                        </div>
+                                        <div className="flex-1 overflow-y-auto custom-scrollbar pr-4 space-y-10">
+                                            {sortedMenuCategories.map(([cat, items]) => (
+                                                <div key={cat} className="space-y-4">
+                                                    <div className="flex items-center gap-4">
+                                                        <h4 className="text-[10px] font-black text-amber-500/60 uppercase tracking-[0.2em]">{cat}</h4>
+                                                        <div className="flex-1 h-px bg-slate-800/30 border-dashed border-t"></div>
+                                                    </div>
+                                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                                                        {items.map((item, idx) => (
+                                                            <button 
+                                                                key={idx} 
+                                                                onClick={() => handleAddItem(item)} 
+                                                                className="flex items-center gap-3 p-3 bg-slate-800/40 rounded-xl border border-slate-700/50 hover:bg-slate-800 hover:border-amber-500/50 transition-all group text-left"
+                                                            >
+                                                                <span className="flex-1 text-sm font-medium text-white group-hover:text-amber-500 transition-colors">{item.name}</span>
+                                                                <div className="flex items-center gap-1 bg-slate-900/50 px-3 py-1.5 rounded-lg border border-slate-700/50">
+                                                                    <span className="text-xs text-slate-500 font-bold">₺</span>
+                                                                    <span className="text-emerald-400 text-right text-xs font-mono font-bold">{item.price}</span>
+                                                                </div>
+                                                                <div className="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-500 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all">
+                                                                    <i className="fas fa-plus text-[10px]"></i>
+                                                                </div>
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className="md:col-span-4 flex flex-col h-full bg-slate-950/40 rounded-3xl border border-slate-700/50 p-6 shadow-inner overflow-hidden">
+                                        <div className="flex items-center justify-between mb-4 flex-none">
+                                            <h3 className="text-sm font-bold text-emerald-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                                                <i className="fas fa-receipt"></i> Siparişler
+                                            </h3>
+                                            <span className="bg-emerald-500/10 text-emerald-400 text-[10px] font-black px-2 py-0.5 rounded-full">{orders.length} Kalem</span>
+                                        </div>
+                                        <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-3">
+                                            {orders.length === 0 ? (
+                                                <div className="h-full flex flex-col items-center justify-center text-slate-600 text-sm text-center">
+                                                    <div className="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center mb-4">
+                                                        <i className="fas fa-shopping-basket text-2xl text-slate-700"></i>
+                                                    </div>
+                                                    Henüz ürün seçilmedi.<br/>Soldaki menüden ürün ekleyin.
+                                                </div>
+                                            ) : (
+                                                orders.map((item, idx) => (
+                                                    <div key={idx} className="flex justify-between items-center bg-slate-900/50 p-3 rounded-2xl border border-slate-800 animate-fade-in">
+                                                        <div className="flex flex-col flex-1 min-w-0 pr-2">
+                                                            <span className="text-sm text-white font-semibold truncate">{item.name}</span>
+                                                            <span className="text-[10px] text-emerald-400 font-mono font-bold">{item.price} ₺</span>
+                                                        </div>
+                                                        <div className="flex items-center gap-2 bg-slate-800/50 p-1 rounded-xl border border-slate-700/50 flex-none">
+                                                            <button onClick={() => handleRemoveItem(item.name)} className="w-7 h-7 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all"><i className="fas fa-minus text-[10px]"></i></button>
+                                                            <span className="text-xs font-bold text-white w-5 text-center">{item.quantity}</span>
+                                                            <button onClick={() => handleAddItem(item)} className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all"><i className="fas fa-plus text-[10px]"></i></button>
+                                                        </div>
+                                                    </div>
+                                                ))
+                                            )}
+                                        </div>
+                                        <div className="mt-6 pt-4 border-t border-slate-800 flex flex-col gap-2 flex-none">
+                                            <div className="flex justify-between items-center px-1">
+                                                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">GENEL TOPLAM</span>
+                                                <span className="text-2xl font-black text-amber-500 font-mono">₺{totalPrice.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="px-8 py-6 border-t border-slate-800 flex justify-between gap-4 flex-none bg-slate-900/50">
+                            <button onClick={onClose} className="px-8 text-white/30 hover:text-red-500 text-[10px] font-black uppercase tracking-widest transition-all">İptal Et</button>
+                            <div className="flex gap-4">
+                                {step === 1 ? (
+                                    <button onClick={() => setStep(2)} className="bg-slate-800 hover:bg-slate-700 text-white font-black py-4 px-10 rounded-2xl shadow-xl uppercase tracking-widest text-[10px] flex items-center gap-3 transition-all">
+                                        Ürün ve Sipariş Seçimine Geç <i className="fas fa-chevron-right text-[10px]"></i>
+                                    </button>
+                                ) : (
+                                    <>
+                                        <button onClick={() => setStep(1)} className="border border-slate-700 hover:bg-slate-800 text-white/50 font-black py-4 px-10 rounded-2xl uppercase tracking-widest text-[10px] transition-all">
+                                            <i className="fas fa-chevron-left text-[10px] mr-3"></i> Bilgileri Düzenle
+                                        </button>
+                                        <button onClick={() => onSave({
+                                            customerName, adultCount, childCount, phone, tableNumber, note, orders, date: selectedDate
+                                        })} className="bg-amber-600 hover:bg-amber-500 text-white font-black py-4 px-12 rounded-2xl shadow-xl uppercase tracking-widest text-[10px] transition-all transform hover:scale-[1.02]">
+                                            <i className="fas fa-check mr-2"></i> Rezervasyonu Kaydet
+                                        </button>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
         const MenuManagementModal = ({ onClose }) => {
             const [menus, setMenus] = useState({});
             const [loading, setLoading] = useState(true);
 
             const INITIAL_MENU_STRUCTURE = {
-                "GÜNÜN MENÜSÜ": [
-                    { name: "GÜNÜN MENÜSÜ", price: "300,00" }
-                ],
+                "GÜNÜN MENÜSÜ": [{ name: "GÜNÜN MENÜSÜ", price: "300,00" }],
                 "İFTAR MENÜLERİ": [
-                    { name: "İFTAR ET SOTE", price: "700,00" },
-                    { name: "İFTAR PİLİÇ SARMA", price: "500,00" },
-                    { name: "İFTAR ROSTO KÖFTE", price: "700,00" },
-                    { name: "İFTAR TAVUK SOTE", price: "500,00" },
-                    { name: "İFTAR ULUIRMAK KEBABI", price: "600,00" },
-                    { name: "İFTAR ULUIRMAK KÖFTE", price: "700,00" }
+                    { name: "İFTAR ET SOTE", price: "700,00" }, { name: "İFTAR PİLİÇ SARMA", price: "500,00" },
+                    { name: "İFTAR ROSTO KÖFTE", price: "700,00" }, { name: "İFTAR TAVUK SOTE", price: "500,00" },
+                    { name: "İFTAR ULUIRMAK KEBABI", price: "600,00" }, { name: "İFTAR ULUIRMAK KÖFTE", price: "700,00" }
                 ],
                 "ALAKART MENÜLER": [
-                    { name: "TAVUK SOTE", price: "350,00" },
-                    { name: "TAVUK ŞİŞ", price: "350,00" },
-                    { name: "TAVUK BONFİLE", price: "350,00" },
-                    { name: "MANTAR SOTE", price: "350,00" },
-                    { name: "ET SOTE", price: "400,00" },
-                    { name: "SAC KAVURMA", price: "500,00" },
-                    { name: "KARIŞIK SOTE", price: "400,00" },
-                    { name: "KARIŞIK IZGARA", price: "500,00" },
-                    { name: "IZGARA KÖFTE", price: "400,00" },
-                    { name: "KILIÇARSLAN ÇÖKERTMESİ", price: "350,00" }
+                    { name: "TAVUK SOTE", price: "350,00" }, { name: "TAVUK ŞİŞ", price: "350,00" },
+                    { name: "TAVUK BONFİLE", price: "350,00" }, { name: "MANTAR SOTE", price: "350,00" },
+                    { name: "ET SOTE", price: "400,00" }, { name: "SAC KAVURMA", price: "500,00" },
+                    { name: "KARIŞIK SOTE", price: "400,00" }, { name: "KARIŞIK IZGARA", price: "500,00" },
+                    { name: "IZGARA KÖFTE", price: "400,00" }, { name: "KILIÇARSLAN ÇÖKERTMESİ", price: "350,00" }
                 ],
                 "TATLILAR": [
-                    { name: "HELVADERE", price: "75,00" },
-                    { name: "SÜTLAÇ", price: "65,00" },
-                    { name: "HASANDĞI ZİRVESİ", price: "150,00" },
-                    { name: "TRİLEÇE", price: "80,00" },
-                    { name: "REVANİ", price: "65,00" },
-                    { name: "GÜZ GÜNEŞİ", price: "65,00" },
-                    { name: "GÜLLAÇ", price: "65,00" },
-                    { name: "KALBURABASTI", price: "65,00" },
-                    { name: "PROFİTEROL", price: "150,00" },
-                    { name: "İNCİM", price: "120,00" },
-                    { name: "LATTEM", price: "100,00" },
-                    { name: "İNCELEK", price: "70,00" },
-                    { name: "KADAYIF BURMA", price: "175,00" },
-                    { name: "MAGNOLYA", price: "65,00" }
+                    { name: "HELVADERE", price: "75,00" }, { name: "SÜTLAÇ", price: "65,00" }, { name: "HASANDĞI ZİRVESİ", price: "150,00" },
+                    { name: "TRİLEÇE", price: "80,00" }, { name: "REVANİ", price: "65,00" }, { name: "GÜZ GÜNEŞİ", price: "65,00" },
+                    { name: "GÜLLAÇ", price: "65,00" }, { name: "KALBURABASTI", price: "65,00" }, { name: "PROFİTEROL", price: "150,00" },
+                    { name: "İNCİM", price: "120,00" }, { name: "LATTEM", price: "100,00" }, { name: "İNCELEK", price: "70,00" },
+                    { name: "KADAYIF BURMA", price: "175,00" }, { name: "MAGNOLYA", price: "65,00" }
                 ],
                 "PASTALAR": [
-                    { name: "RULO PASTA", price: "110,00" },
-                    { name: "MOZAİK PASTA", price: "80,00" },
-                    { name: "BALBADEM", price: "140,00" },
-                    { name: "SULTANHANI", price: "160,00" },
-                    { name: "EKLER", price: "25,00" },
-                    { name: "EĞRİ MİNARE", price: "200,00" },
-                    { name: "AŞIKLI HÖYÜK", price: "170,00" },
-                    { name: "EKECİK", price: "170,00" },
-                    { name: "PROFESÖR PASTA", price: "120,00" },
-                    { name: "SARIKARAMAN", price: "200,00" },
-                    { name: "TOPAKKAYA", price: "80,00" },
-                    { name: "BELİSIRMA", price: "100,00" }
+                    { name: "RULO PASTA", price: "110,00" }, { name: "MOZAİK PASTA", price: "80,00" }, { name: "BALBADEM", price: "140,00" },
+                    { name: "SULTANHANI", price: "160,00" }, { name: "EKLER", price: "25,00" }, { name: "EĞRİ MİNARE", price: "200,00" },
+                    { name: "AŞIKLI HÖYÜK", price: "170,00" }, { name: "EKECİK", price: "170,00" }, { name: "PROFESÖR PASTA", price: "120,00" },
+                    { name: "SARIKARAMAN", price: "200,00" }, { name: "TOPAKKAYA", price: "80,00" }, { name: "BELİSIRMA", price: "100,00" }
                 ]
             };
 
@@ -317,8 +494,16 @@
                 await setDoc(doc(db, 'settings', 'categorized_menus'), { content: newContent });
             };
 
+            const sortedMenus = useMemo(() => {
+                return Object.entries(menus).sort(([a], [b]) => {
+                    const indexA = CATEGORY_ORDER.indexOf(a);
+                    const indexB = CATEGORY_ORDER.indexOf(b);
+                    return (indexA === -1 ? 99 : indexA) - (indexB === -1 ? 99 : indexB);
+                });
+            }, [menus]);
+
             return (
-                <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-slate-950/95 backdrop-blur-xl animate-fade-in">
+                <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-slate-950/95 backdrop-blur-xl animate-fade-in no-print">
                     <div className="w-full max-w-4xl bg-slate-900 border border-slate-700 rounded-[2.5rem] p-8 shadow-2xl flex flex-col max-h-[90vh]">
                         <div className="flex justify-between items-center mb-8">
                             <h2 className="text-3xl font-bold text-white flex items-center gap-3">
@@ -331,12 +516,11 @@
                                 <i className="fas fa-times"></i>
                             </button>
                         </div>
-
                         <div className="flex-1 overflow-y-auto custom-scrollbar pr-4 space-y-10">
                             {loading ? (
                                 <div className="text-center py-20 text-slate-500">Menüler Yükleniyor...</div>
                             ) : (
-                                Object.entries(menus).map(([category, items]) => (
+                                sortedMenus.map(([category, items]) => (
                                     <section key={category} className="space-y-4">
                                         <div className="flex items-center gap-4">
                                             <h3 className="text-lg font-black text-amber-500 uppercase tracking-[0.2em]">{category}</h3>
@@ -345,17 +529,10 @@
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                             {items.map((item, idx) => (
                                                 <div key={idx} className="flex items-center gap-3 p-3 bg-slate-800/40 rounded-xl border border-slate-700/50 hover:border-slate-600 transition-all group">
-                                                    <input 
-                                                        type="text"
-                                                        className="flex-1 bg-transparent border-none text-white text-sm font-medium focus:ring-0 outline-none"
-                                                        value={item.name}
-                                                        onChange={(e) => updateItemName(category, idx, e.target.value)}
-                                                    />
+                                                    <input type="text" className="flex-1 bg-transparent border-none text-white text-sm font-medium focus:ring-0 outline-none" value={item.name} onChange={(e) => updateItemName(category, idx, e.target.value)} />
                                                     <div className="flex items-center gap-1 bg-slate-900/50 px-3 py-1.5 rounded-lg border border-slate-700/50">
                                                         <span className="text-xs text-slate-500 font-bold">₺</span>
-                                                        <span className="text-emerald-400 text-right text-xs font-mono font-bold select-none cursor-default">
-                                                            {item.price}
-                                                        </span>
+                                                        <span className="text-emerald-400 text-right text-xs font-mono font-bold select-none cursor-default">{item.price}</span>
                                                     </div>
                                                 </div>
                                             ))}
@@ -364,12 +541,7 @@
                                 ))
                             )}
                         </div>
-
-                        <div className="mt-8 flex justify-end">
-                            <button onClick={onClose} className="px-10 bg-amber-600 hover:bg-amber-500 text-white font-black py-4 rounded-2xl transition-all shadow-lg uppercase tracking-widest text-sm">
-                                Tamam
-                            </button>
-                        </div>
+                        <div className="mt-8 flex justify-end"><button onClick={onClose} className="px-10 bg-amber-600 hover:bg-amber-500 text-white font-black py-4 rounded-2xl transition-all shadow-lg uppercase tracking-widest text-sm">Tamam</button></div>
                     </div>
                 </div>
             );
@@ -378,62 +550,66 @@
         const App = () => {
             const [selectedDate, setSelectedDate] = useState('2026-02-19');
             const [reservations, setReservations] = useState([]);
+            const [categorizedMenus, setCategorizedMenus] = useState({});
             const [modal, setModal] = useState({ open: false, data: null });
             const [showAllMenus, setShowAllMenus] = useState(false);
             const [showMenuManagement, setShowMenuManagement] = useState(false);
 
             useEffect(() => {
-                const q = collection(db, 'reservations');
-                const unsubscribe = onSnapshot(q, (snap) => {
+                const unsubscribe1 = onSnapshot(collection(db, 'reservations'), (snap) => {
                     setReservations(snap.docs.map(d => ({ id: d.id, ...d.data() })));
                 });
-                return () => unsubscribe();
+                const unsubscribe2 = onSnapshot(doc(db, 'settings', 'categorized_menus'), (snap) => {
+                    if (snap.exists()) setCategorizedMenus(snap.data().content);
+                });
+                return () => { unsubscribe1(); unsubscribe2(); };
             }, []);
 
             const filtered = useMemo(() => {
                 return reservations.filter(r => r.date === selectedDate).sort((a, b) => a.tableNumber - b.tableNumber);
             }, [reservations, selectedDate]);
 
-            const stats = { 
-                totalPeople: filtered.reduce((a, b) => a + (b.adultCount || 0) + (b.childCount || 0), 0), 
-                count: filtered.length 
-            };
-
-            const currentDailyMain = useMemo(() => {
-                return MENU_DATABASE[selectedDate]?.[1] || "Belli Değil";
-            }, [selectedDate]);
+            const stats = { totalPeople: filtered.reduce((a, b) => a + (b.adultCount || 0) + (b.childCount || 0), 0), count: filtered.length };
 
             const handleSave = async (data) => {
                 try {
                     if (modal.data?.id) await updateDoc(doc(db, 'reservations', modal.data.id), data);
                     else await addDoc(collection(db, 'reservations'), data);
                     setModal({ open: false, data: null });
-                } catch (e) {
-                    alert("Hata!");
+                } catch (e) { alert("Hata!"); }
+            };
+
+            const handleDelete = async (id) => {
+                if (window.confirm("Bu rezervasyonu silmek istediğinize emin misiniz?")) {
+                    try {
+                        await deleteDoc(doc(db, 'reservations', id));
+                    } catch (e) {
+                        console.error("Silme hatası:", e);
+                        alert("Silme işlemi başarısız oldu. Lütfen tekrar deneyin.");
+                    }
                 }
             };
 
-            const handleDelete = async (e, id) => {
-                e.stopPropagation();
-                if (confirm("Silinecek?")) await deleteDoc(doc(db, 'reservations', id));
-            };
-
             const sendWhatsAppMessage = (res) => {
-                const menu = MENU_DATABASE[res.date] || ["-", "-", "-", "-"];
-                const menuText = menu.map(item => `* ${item}`).join('\n');
                 const formattedDate = res.date.split('-').reverse().join('.');
-                const peopleInfo = res.childCount > 0 ? `${res.adultCount} Yet., ${res.childCount} Çoc.` : `${res.adultCount} Kişi`;
+                const peopleInfo = res.childCount > 0 ? `${res.adultCount} Yetişkin, ${res.childCount} Çocuk` : `${res.adultCount} Kişi`;
+                
+                let orderText = "";
+                let totalPrice = 0;
+                if (res.orders && res.orders.length > 0) {
+                    orderText = "\n\nSİPARİŞ DETAYLARI:\n" + res.orders.map(o => {
+                        const p = parseFloat(o.price.replace('.','').replace(',','.'));
+                        totalPrice += (p * o.quantity);
+                        return `* ${o.name} (${o.quantity} Adet)`;
+                    }).join('\n');
+                    orderText += `\n\nTOPLAM TUTAR: ₺${totalPrice.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}`;
+                }
 
-                const message = `Sayın ${res.customerName},\n\nGelveri\n${peopleInfo}\n\nTarih: ${formattedDate}\n\nMenü:\n${menuText}\n\nRezervasyonunuz alınmıştır.\n\nUygulama Oteli`;
+                const message = `Sayın ${res.customerName},\n\nMasa: G-${res.tableNumber.toString().padStart(2, '0')}\nGelveri\n${peopleInfo}\n\nTarih: ${formattedDate}\n\nRezervasyonunuz alınmıştır.${orderText}\n\nUygulama Oteli`;
 
                 let cleanPhone = res.phone.replace(/\D/g, '');
                 if (cleanPhone.startsWith('0')) cleanPhone = '90' + cleanPhone.substring(1);
-                const waUrl = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(message)}`;
-                window.open(waUrl, '_blank');
-            };
-
-            const handlePrint = () => {
-                window.print();
+                window.open(`https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(message)}`, '_blank');
             };
 
             const weeklyMenus = useMemo(() => {
@@ -448,72 +624,60 @@
                 return weeks;
             }, []);
 
-            const DAY_NAMES = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
-
             return (
                 <div className="flex h-screen w-full bg-slate-950 text-white overflow-hidden">
-                    {/* Yazdırma Raporu Başlığı */}
-                    <div className="print-header">
-                        <h1>Ramazan Sofrası - Rezervasyon Listesi</h1>
-                        <p><strong>Tarih:</strong> {selectedDate.split('-').reverse().join('.')} | <strong>Toplam Doluluk:</strong> {stats.count} Masa / {stats.totalPeople} Kişi</p>
-                    </div>
-
+                    <div className="print-header"><h1>Ramazan Sofrası - Rezervasyon Listesi</h1><p><strong>Tarih:</strong> {selectedDate.split('-').reverse().join('.')} | <strong>Toplam Doluluk:</strong> {stats.count} Masa / {stats.totalPeople} Kişi</p></div>
                     <main className="flex-1 p-8 flex flex-col overflow-hidden">
                         <header className="flex justify-between items-center mb-8 no-print">
-                            <div>
-                                <h1 className="text-4xl font-bold text-amber-500">Ramazan Sofrası</h1>
-                                <p className="text-sm text-white/70 font-medium uppercase tracking-[0.2em] mt-2">Profesyonel Yönetim</p>
-                            </div>
+                            <div><h1 className="text-4xl font-bold text-amber-500">Ramazan Sofrası</h1><p className="text-sm text-white/70 font-medium uppercase tracking-[0.2em] mt-2">Profesyonel Yönetim</p></div>
                             <div className="flex items-center gap-3">
-                                <button 
-                                    onClick={handlePrint}
-                                    className="bg-slate-800 hover:bg-slate-700 text-amber-500 border border-slate-700 p-3 rounded-2xl shadow-xl transition-all flex items-center gap-2 font-bold px-5"
-                                >
-                                    <i className="fas fa-print"></i> Yazdır
-                                </button>
-                                <div className="flex items-center gap-4 bg-slate-900 border border-slate-700 p-3 rounded-2xl shadow-xl">
-                                    <i className="fas fa-calendar-day text-amber-500 ml-2"></i>
-                                    <input type="date" className="bg-transparent border-none text-white font-bold outline-none cursor-pointer" value={selectedDate} onChange={e => setSelectedDate(e.target.value)} />
-                                </div>
+                                <button onClick={() => window.print()} className="bg-slate-800 hover:bg-slate-700 text-amber-500 border border-slate-700 p-3 rounded-2xl shadow-xl transition-all flex items-center gap-2 font-bold px-5"><i className="fas fa-print"></i> Yazdır</button>
+                                <div className="flex items-center gap-4 bg-slate-900 border border-slate-700 p-3 rounded-2xl shadow-xl"><i className="fas fa-calendar-day text-amber-500 ml-2"></i><input type="date" className="bg-transparent border-none text-white font-bold outline-none cursor-pointer" value={selectedDate} onChange={e => setSelectedDate(e.target.value)} /></div>
                             </div>
                         </header>
 
-                        {/* Yazdırma İçin Rezervasyon Listesi (Sadece Yazıcıda Görünür) */}
                         <table className="reservation-table">
                             <thead>
                                 <tr>
-                                    <th>Masa No</th>
-                                    <th>Misafir Adı</th>
-                                    <th>Telefon</th>
-                                    <th>Kişi Sayısı</th>
-                                    <th>Not</th>
+                                    <th style={{width:'80px'}}>Masa</th>
+                                    <th style={{width:'100px'}}>Durum</th>
+                                    <th>Misafir Bilgisi</th>
+                                    <th style={{width:'150px'}}>Kişi</th>
+                                    <th>Sipariş Özeti</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {filtered.length > 0 ? filtered.map(res => (
+                                {filtered.map(res => (
                                     <tr key={res.id}>
-                                        <td style={{fontWeight: 'bold'}}>#{res.tableNumber.toString().padStart(2, '0')}</td>
-                                        <td>{res.customerName}</td>
-                                        <td>{res.phone}</td>
-                                        <td>{res.adultCount} Yetişkin {res.childCount > 0 ? `+ ${res.childCount} Çocuk` : ''}</td>
-                                        <td>{res.note || '-'}</td>
+                                        <td><span className="print-masa-no">G-{res.tableNumber.toString().padStart(2, '0')}</span></td>
+                                        <td><strong>DOLU</strong></td>
+                                        <td>
+                                            <span className="print-customer-name">{res.customerName}</span>
+                                            <span className="print-phone">{res.phone}</span>
+                                        </td>
+                                        <td>
+                                            <div className="print-stat-item">
+                                                <strong>{res.adultCount}</strong><span className="print-stat-label">Y</span>
+                                            </div>
+                                            {res.childCount > 0 && (
+                                                <div className="print-stat-item">
+                                                    <strong>{res.childCount}</strong><span className="print-stat-label">Ç</span>
+                                                </div>
+                                            )}
+                                        </td>
+                                        <td>
+                                            <span style={{fontSize:'8pt', lineHeight:'1.2'}}>
+                                                {res.orders?.map(o => `${o.quantity} ${o.name}`).join(', ') || '-'}
+                                            </span>
+                                        </td>
                                     </tr>
-                                )) : (
-                                    <tr>
-                                        <td colSpan="5" style={{textAlign: 'center', padding: '20px'}}>Bu tarihte henüz rezervasyon bulunmamaktadır.</td>
-                                    </tr>
-                                )}
+                                ))}
                             </tbody>
                         </table>
 
                         <div className="flex-1 overflow-hidden flex flex-col bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl main-reservation-list">
                             <div className="grid grid-cols-12 gap-4 px-8 py-5 border-b border-slate-800 bg-slate-800/40 text-[10px] font-black text-white uppercase tracking-widest">
-                                <div className="col-span-1">Masa</div>
-                                <div className="col-span-2">Durum</div>
-                                <div className="col-span-3">Misafir</div>
-                                <div className="col-span-2 text-center">Kişi</div>
-                                <div className="col-span-2">Ana Yemek</div>
-                                <div className="col-span-2 text-right">İşlem</div>
+                                <div className="col-span-1">Masa</div><div className="col-span-2">Durum</div><div className="col-span-3">Misafir</div><div className="col-span-1 text-center">Kişi</div><div className="col-span-3">Sipariş Özeti</div><div className="col-span-2 text-right">İşlem</div>
                             </div>
                             <div className="flex-1 overflow-y-auto custom-scrollbar divide-y divide-slate-800">
                                 {Array.from({ length: 30 }, (_, i) => {
@@ -521,14 +685,33 @@
                                     const res = filtered.find(r => r.tableNumber === num);
                                     return (
                                         <div key={num} onClick={() => setModal({ open: true, data: res || { tableNumber: num } })} className={`grid grid-cols-12 gap-4 px-8 py-5 items-center table-row-hover cursor-pointer ${res ? 'bg-amber-500/[0.03]' : ''}`}>
-                                            <div className="col-span-1"><span className={`text-xl font-black ${res ? 'text-amber-500' : 'text-white/20'}`}>#{num.toString().padStart(2, '0')}</span></div>
+                                            <div className="col-span-1"><span className={`text-xl font-black ${res ? 'text-amber-500' : 'text-white/20'}`}>G-{num.toString().padStart(2, '0')}</span></div>
                                             <div className="col-span-2">{res ? <span className="text-[10px] font-bold text-amber-500 uppercase tracking-widest bg-amber-500/10 px-3 py-1 rounded-full">Dolu</span> : <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest bg-emerald-500/5 px-3 py-1 rounded-full">Boş</span>}</div>
                                             <div className="col-span-3">{res ? <div className="flex flex-col"><span className="font-bold text-sm">{res.customerName}</span><span className="text-xs text-white/50">{res.phone}</span></div> : <span className="text-xs text-white/10">-</span>}</div>
-                                            <div className="col-span-2 text-center">{res ? <span className="font-bold text-emerald-400">{res.adultCount + (res.childCount || 0)}</span> : "-"}</div>
-                                            <div className="col-span-2"><span className={`text-sm ${res ? 'text-white' : 'text-white/10 italic'}`}>{currentDailyMain}</span></div>
+                                            <div className="col-span-1 text-center">
+                                                {res ? (
+                                                    <div className="flex flex-col items-center justify-center -space-y-1">
+                                                        <div className="flex items-center gap-1 text-emerald-400">
+                                                            <span className="text-sm font-black">{res.adultCount}</span>
+                                                            <span className="text-[8px] font-bold uppercase opacity-60">Y</span>
+                                                        </div>
+                                                        {res.childCount > 0 && (
+                                                            <div className="flex items-center gap-1 text-cyan-400">
+                                                                <span className="text-[11px] font-black">{res.childCount}</span>
+                                                                <span className="text-[8px] font-bold uppercase opacity-60">Ç</span>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                ) : "-"}
+                                            </div>
+                                            <div className="col-span-3">
+                                                {res && res.orders?.length > 0 ? (
+                                                    <span className="text-xs text-white/60 line-clamp-1">{res.orders.map(o => `${o.quantity} ${o.name}`).join(', ')}</span>
+                                                ) : <span className="text-xs text-white/10">-</span>}
+                                            </div>
                                             <div className="col-span-2 text-right flex justify-end gap-2">
                                                 {res && <button onClick={(e) => { e.stopPropagation(); sendWhatsAppMessage(res); }} className="p-2 bg-emerald-500/10 text-emerald-500 rounded-lg"><i className="fab fa-whatsapp"></i></button>}
-                                                {res && <button onClick={(e) => handleDelete(e, res.id)} className="p-2 bg-red-500/10 text-red-500 rounded-lg"><i className="fas fa-trash-alt"></i></button>}
+                                                {res && <button onClick={(e) => { e.stopPropagation(); handleDelete(res.id); }} className="p-2 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500 hover:text-white transition-all"><i className="fas fa-trash-alt"></i></button>}
                                             </div>
                                         </div>
                                     );
@@ -539,6 +722,9 @@
 
                     <Sidebar stats={stats} selectedDate={selectedDate} onNewReservation={() => setModal({ open: true, data: null })} onShowAllMenus={() => setShowAllMenus(true)} onOpenMenuManagement={() => setShowMenuManagement(true)} />
 
+                    {modal.open && (
+                        <ReservationModal data={modal.data} selectedDate={selectedDate} categorizedMenus={categorizedMenus} allReservations={reservations.filter(r => r.date === selectedDate)} onClose={() => setModal({ open: false, data: null })} onSave={handleSave} />
+                    )}
                     {showAllMenus && (
                         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-950/95 backdrop-blur-xl animate-fade-in no-print">
                             <div className="w-full max-w-6xl max-h-[90vh] bg-slate-900 border border-slate-700 rounded-[2rem] flex flex-col shadow-2xl overflow-hidden">
@@ -548,9 +734,7 @@
                                 </div>
                                 <div className="flex-1 overflow-auto p-4 custom-scrollbar">
                                     <div className="flex gap-4 min-w-[1300px]">
-                                        <div className="flex flex-col pt-[52px] gap-2 w-28 flex-none">
-                                            {DAY_NAMES.map(day => <div key={day} className="h-[120px] flex items-center justify-end pr-3 text-[10px] text-white/20 font-black uppercase tracking-widest">{day}</div>)}
-                                        </div>
+                                        <div className="flex flex-col pt-[52px] gap-2 w-28 flex-none">{["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"].map(day => <div key={day} className="h-[120px] flex items-center justify-end pr-3 text-[10px] text-white/20 font-black uppercase tracking-widest">{day}</div>)}</div>
                                         <div className="grid grid-cols-5 gap-3 flex-1">
                                             {weeklyMenus.map((week, weekIdx) => (
                                                 <div key={weekIdx} className="flex flex-col gap-2">
@@ -558,10 +742,7 @@
                                                     {week.map((entry, idx) => (
                                                         <div key={idx} className="h-[120px]">
                                                             {entry ? (
-                                                                <div className="bg-slate-800/40 p-3 rounded-xl border border-slate-700 h-full overflow-hidden flex flex-col">
-                                                                    <span className="text-[10px] font-mono text-amber-500 mb-1">{entry[0].split('-').reverse().join('.')}</span>
-                                                                    {entry[1].map((item, i) => <p key={i} className={`text-[11px] truncate ${i === 1 ? 'font-bold text-white' : 'text-white/60'}`}>{item}</p>)}
-                                                                </div>
+                                                                <div className="bg-slate-800/40 p-3 rounded-xl border border-slate-700 h-full overflow-hidden flex flex-col"><span className="text-[10px] font-mono text-amber-500 mb-1">{entry[0].split('-').reverse().join('.')}</span>{entry[1].map((item, i) => <p key={i} className={`text-[11px] truncate ${i === 1 ? 'font-bold text-white' : 'text-white/60'}`}>{item}</p>)}</div>
                                                             ) : <div className="h-full border border-dashed border-slate-800/30 rounded-xl"></div>}
                                                         </div>
                                                     ))}
@@ -573,41 +754,7 @@
                             </div>
                         </div>
                     )}
-
                     {showMenuManagement && <MenuManagementModal onClose={() => setShowMenuManagement(false)} />}
-
-                    {modal.open && (
-                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md animate-fade-in no-print">
-                            <div className="w-full max-w-md bg-slate-900 border border-slate-700 rounded-[2rem] p-8 shadow-2xl">
-                                <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3"><i className="fas fa-clipboard-list text-amber-500"></i> Rezervasyon Bilgileri</h2>
-                                <form onSubmit={(e) => { 
-                                    e.preventDefault(); 
-                                    const fd = new FormData(e.target);
-                                    handleSave({
-                                        customerName: fd.get('name'),
-                                        adultCount: parseInt(fd.get('adults')),
-                                        childCount: parseInt(fd.get('children')),
-                                        phone: fd.get('phone'),
-                                        tableNumber: parseInt(fd.get('table')),
-                                        note: fd.get('note'),
-                                        date: selectedDate
-                                    });
-                                }} className="space-y-4">
-                                    <div><label className="text-[10px] text-white/50 font-black uppercase tracking-widest ml-1">Misafir</label><input required name="name" className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white outline-none focus:border-amber-500" defaultValue={modal.data?.customerName} /></div>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div><label className="text-[10px] text-white/50 font-black uppercase tracking-widest ml-1">Yetişkin</label><input required name="adults" type="number" min="1" className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white" defaultValue={modal.data?.adultCount || 2} /></div>
-                                        <div><label className="text-[10px] text-white/50 font-black uppercase tracking-widest ml-1">Çocuk</label><input name="children" type="number" min="0" className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white" defaultValue={modal.data?.childCount || 0} /></div>
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div><label className="text-[10px] text-white/50 font-black uppercase tracking-widest ml-1">Masa</label><select name="table" className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white" defaultValue={modal.data?.tableNumber || 1}>{Array.from({length: 30}, (_, i) => i + 1).map(n => <option key={n} value={n} disabled={modal.data?.tableNumber !== n && filtered.some(r => r.tableNumber === n)} className="bg-slate-900">Masa {n}</option>)}</select></div>
-                                        <div><label className="text-[10px] text-white/50 font-black uppercase tracking-widest ml-1">Telefon</label><input required name="phone" className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white font-mono" defaultValue={modal.data?.phone} placeholder="05xx..." /></div>
-                                    </div>
-                                    <div><label className="text-[10px] text-white/50 font-black uppercase tracking-widest ml-1">Not (Opsiyonel)</label><textarea name="note" rows="2" className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white resize-none" defaultValue={modal.data?.note}></textarea></div>
-                                    <div className="pt-4 space-y-2"><button className="w-full bg-amber-600 hover:bg-amber-500 text-white font-black py-4 rounded-xl shadow-xl uppercase tracking-widest">Kaydet</button><button type="button" onClick={() => setModal({ open: false, data: null })} className="w-full text-white/30 text-xs py-2 uppercase tracking-widest">Kapat</button></div>
-                                </form>
-                            </div>
-                        </div>
-                    )}
                 </div>
             );
         };
