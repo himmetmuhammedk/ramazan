@@ -4,7 +4,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ramazan Sofrası - Rezervasyon</title>
+    <title>Uluırmak Uygulama Oteli - Rezervasyon</title>
+    
+    <!-- PWA Meta Etiketleri -->
+    <meta name="theme-color" content="#0f172a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3443/3443338.png">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -110,6 +118,17 @@
             getFirestore, collection, addDoc, onSnapshot, query, 
             where, deleteDoc, doc, updateDoc, setDoc, getDoc 
         } from 'firebase/firestore';
+
+        // Service Worker Kaydı
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').then(reg => {
+                    console.log('SW Kayıt Başarılı:', reg.scope);
+                }).catch(err => {
+                    console.log('SW Kayıt Hatası:', err);
+                });
+            });
+        }
 
         const firebaseConfig = {
             apiKey: "AIzaSyC1DEGLU3FraIDI2QqqSFL3hmdB0odiSD4",
@@ -626,10 +645,10 @@
 
             return (
                 <div className="flex h-screen w-full bg-slate-950 text-white overflow-hidden">
-                    <div className="print-header"><h1>Ramazan Sofrası - Rezervasyon Listesi</h1><p><strong>Tarih:</strong> {selectedDate.split('-').reverse().join('.')} | <strong>Toplam Doluluk:</strong> {stats.count} Masa / {stats.totalPeople} Kişi</p></div>
+                    <div className="print-header"><h1>Uluırmak Uygulama Oteli - Rezervasyon Listesi</h1><p><strong>Tarih:</strong> {selectedDate.split('-').reverse().join('.')} | <strong>Toplam Doluluk:</strong> {stats.count} Masa / {stats.totalPeople} Kişi</p></div>
                     <main className="flex-1 p-8 flex flex-col overflow-hidden">
                         <header className="flex justify-between items-center mb-8 no-print">
-                            <div><h1 className="text-4xl font-bold text-amber-500">Ramazan Sofrası</h1><p className="text-sm text-white/70 font-medium uppercase tracking-[0.2em] mt-2">Profesyonel Yönetim</p></div>
+                            <div><h1 className="text-4xl font-bold text-amber-500">Uluırmak Uygulama Oteli</h1></div>
                             <div className="flex items-center gap-3">
                                 <button onClick={() => window.print()} className="bg-slate-800 hover:bg-slate-700 text-amber-500 border border-slate-700 p-3 rounded-2xl shadow-xl transition-all flex items-center gap-2 font-bold px-5"><i className="fas fa-print"></i> Yazdır</button>
                                 <div className="flex items-center gap-4 bg-slate-900 border border-slate-700 p-3 rounded-2xl shadow-xl"><i className="fas fa-calendar-day text-amber-500 ml-2"></i><input type="date" className="bg-transparent border-none text-white font-bold outline-none cursor-pointer" value={selectedDate} onChange={e => setSelectedDate(e.target.value)} /></div>
