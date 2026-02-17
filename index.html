@@ -37,7 +37,7 @@
         /* Print Container Hiding (Preserve Loading) 
            We use this instead of display:none so images inside are loaded by the browser.
         */
-        .print-header, .print-grid, .name-cards-container { 
+        .print-header, .print-list-container, .name-cards-container { 
             position: absolute; 
             width: 1px; 
             height: 1px; 
@@ -51,11 +51,12 @@
 
         /* Yazdırma Tasarımı */
         @media print {
-            @page { size: portrait; margin: 0; }
+            @page { size: portrait; margin: 10mm; }
             body { 
                 background-color: white !important; 
                 color: black !important; 
                 overflow: visible !important; 
+                font-family: 'Inter', sans-serif !important;
             }
             #root > div > aside, 
             #root > div > main > header,
@@ -67,38 +68,39 @@
             #root { height: auto !important; overflow: visible !important; }
             main { padding: 0 !important; width: 100% !important; height: auto !important; overflow: visible !important; }
             
-            /* Liste Yazdırma Modu */
+            /* Liste Yazdırma Modu (Tablo) */
             body.print-mode-list .print-header { 
-                display: flex !important; 
-                flex-direction: column; 
+                display: block !important; 
                 border-bottom: 2px solid black; 
-                padding: 10px; 
-                margin-bottom: 10px;
-                
-                /* Reset visual hiding */
-                position: static; width: auto; height: auto; overflow: visible; clip: auto; margin: 0 0 10px 0; visibility: visible;
+                padding-bottom: 10px; 
+                margin-bottom: 20px;
+                position: static; width: auto; height: auto; overflow: visible; clip: auto; visibility: visible;
             }
-            body.print-mode-list .print-grid { 
-                display: grid !important; 
-                grid-template-columns: repeat(3, 1fr); 
-                gap: 5px; 
-                padding: 10px; 
-                
-                /* Reset visual hiding */
-                position: static; width: auto; height: auto; overflow: visible; clip: auto; margin: 0; visibility: visible;
+            
+            body.print-mode-list .print-list-container {
+                display: block !important;
+                position: static; width: auto; height: auto; overflow: visible; clip: auto; visibility: visible;
             }
-            body.print-mode-list .print-card { 
-                border: 1px solid black !important; 
-                padding: 8px; 
-                background: white !important; 
-                color: black !important;
+
+            body.print-mode-list .print-table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 10pt;
             }
-            body.print-mode-list .print-card-header { 
-                display: flex; 
-                justify-content: space-between; 
-                font-weight: bold; 
-                border-bottom: 1px solid black !important; 
-                margin-bottom: 4px; 
+            
+            body.print-mode-list .print-table th,
+            body.print-mode-list .print-table td {
+                border: 1px solid #ccc;
+                padding: 6px 8px;
+                vertical-align: top;
+                page-break-inside: avoid;
+            }
+
+            body.print-mode-list .print-table th {
+                background-color: #f0f0f0 !important;
+                font-weight: bold;
+                text-align: left;
+                -webkit-print-color-adjust: exact;
             }
             
             /* İsim Kartı Yazdırma Modu (PDF Stilinde) */
@@ -119,17 +121,41 @@
                 display: flex !important; 
                 flex-direction: column; 
                 align-items: center; 
-                justify-content: center; 
+                justify-content: center; /* Center content vertically */
                 text-align: center;
-                padding: 20px;
+                padding: 10px; /* Reduced padding to fit content better */
                 position: relative;
                 page-break-inside: avoid;
                 background: white !important;
                 color: black !important;
+                overflow: hidden; /* Ensure content doesn't break frame */
+                height: 100%; /* Ensure it fills the grid cell */
+                box-sizing: border-box;
             }
-            body.print-mode-cards .name-card-title { font-family: 'Playfair Display', serif; font-size: 24pt; font-style: italic; margin-bottom: 5px; color: black !important; }
-            body.print-mode-cards .name-card-name { font-family: 'Playfair Display', serif; font-size: 28pt; font-weight: 900; line-height: 1.1; margin-bottom: 30px; text-transform: uppercase; color: black !important; }
-            body.print-mode-cards .name-card-logo { width: 120px; height: 120px; object-fit: contain; }
+            body.print-mode-cards .name-card-title { 
+                font-family: 'Playfair Display', serif; 
+                font-size: 28pt; 
+                font-style: italic; 
+                margin-bottom: 0px; 
+                color: black !important;
+                flex-shrink: 0; 
+            }
+            body.print-mode-cards .name-card-name { 
+                font-family: 'Playfair Display', serif; 
+                /* font-size removed to be dynamic */
+                font-weight: 900; 
+                line-height: 1.1; 
+                margin-bottom: 10px; 
+                text-transform: uppercase; 
+                color: black !important; 
+                word-break: break-word;
+            }
+            body.print-mode-cards .name-card-logo { 
+                width: 140px; 
+                height: 140px; 
+                object-fit: contain; 
+                flex-shrink: 0; /* Prevent logo from shrinking */
+            }
         }
     </style>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -158,6 +184,17 @@
             getFirestore, collection, addDoc, onSnapshot, query, 
             where, deleteDoc, doc, updateDoc, setDoc, getDoc 
         } from 'firebase/firestore';
+
+        // Helper function for dynamic font size
+        const calculateFontSize = (text) => {
+            if (!text) return '30pt';
+            const len = text.length;
+            if (len <= 8) return '48pt';
+            if (len <= 12) return '38pt';
+            if (len <= 16) return '30pt';
+            if (len <= 22) return '24pt';
+            return '18pt';
+        };
 
         // Service Worker Kaydı
         if ('serviceWorker' in navigator) {
@@ -449,7 +486,7 @@
                                                     <div key={idx} className="flex justify-between items-center bg-slate-900/50 p-3 rounded-2xl border border-slate-800 animate-fade-in">
                                                         <div className="flex flex-col flex-1 min-w-0 pr-2">
                                                             <span className="text-sm text-white font-semibold truncate">{item.name}</span>
-                                                            <span className="text-[10px] text-emerald-400 font-mono font-bold">{item.price} ₺</span>
+                                                            <span className="text-sm text-emerald-400 font-mono font-bold">{item.price} ₺</span>
                                                         </div>
                                                         <div className="flex items-center gap-2 bg-slate-800/50 p-1 rounded-xl border border-slate-700/50 flex-none">
                                                             <button onClick={() => handleRemoveItem(item.name)} className="w-7 h-7 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all"><i className="fas fa-minus text-[10px]"></i></button>
@@ -626,10 +663,10 @@
                     <div className="flex-1 overflow-y-auto custom-scrollbar bg-slate-900/50 rounded-3xl border border-slate-700 p-8 flex justify-center">
                         <div className="bg-white w-full max-w-[210mm] min-h-[297mm] p-[10mm] shadow-2xl grid grid-cols-2 gap-[10px] content-start">
                             {reservations.map(res => (
-                                <div key={res.id} className="border-4 double border-black p-6 flex flex-col items-center justify-center text-center aspect-[1.4/1]">
-                                     <div className="font-['Playfair_Display'] text-xl italic mb-2 text-black">SAYIN</div>
-                                     <div className="font-['Playfair_Display'] text-2xl font-black uppercase mb-6 text-black leading-tight">{res.customerName}</div>
-                                     <img src="https://uluirmakmtal.meb.k12.tr/tema/okul_logo.png" alt="Logo" className="w-20 h-20 object-contain" />
+                                <div key={res.id} className="border-4 double border-black p-6 flex flex-col items-center justify-center text-center aspect-[1.4/1] overflow-hidden">
+                                     <div className="font-['Playfair_Display'] text-3xl italic mb-2 text-black flex-shrink-0">SAYIN</div>
+                                     <div style={{ fontSize: calculateFontSize(res.customerName) }} className="font-['Playfair_Display'] font-black uppercase mb-6 text-black leading-tight break-words max-w-full">{res.customerName}</div>
+                                     <img src="https://res.cloudinary.com/dejx0brol/image/upload/v1771331131/logo_j1rcjm.png" alt="Logo" className="w-32 h-32 object-contain flex-shrink-0" />
                                 </div>
                             ))}
                         </div>
@@ -731,23 +768,55 @@
 
             return (
                 <div className="flex h-screen w-full bg-slate-950 text-white overflow-hidden">
-                    {/* Liste Yazdırma Şablonu */}
+                    {/* Liste Yazdırma Şablonu (Servis ve Mutfak İçin) */}
                     <div className="print-header">
-                        <h1 className="text-xl font-bold">Uluırmak Uygulama Oteli Rezervasyon Listesi</h1>
-                        <p><strong>Tarih:</strong> {selectedDate.split('-').reverse().join('.')} | <strong>Toplam:</strong> {stats.count} Masa / {stats.totalPeople} Kişi</p>
+                        <h1 className="text-2xl font-bold text-center border-b-2 border-black pb-2 mb-4">Uluırmak Uygulama Oteli - Servis & Mutfak Listesi</h1>
+                        <div className="flex justify-between text-sm mb-4">
+                            <div><strong>Tarih:</strong> {selectedDate.split('-').reverse().join('.')}</div>
+                            <div><strong>Yazdırma Zamanı:</strong> {new Date().toLocaleString('tr-TR')}</div>
+                        </div>
+                        <div className="flex justify-between text-sm mb-6 border-b border-black pb-4">
+                            <div><strong>Toplam Masa:</strong> {stats.count}</div>
+                            <div><strong>Toplam Kişi:</strong> {stats.totalPeople} ({filtered.reduce((a,b)=>a+(b.adultCount||0),0)} Yetişkin / {filtered.reduce((a,b)=>a+(b.childCount||0),0)} Çocuk)</div>
+                        </div>
                     </div>
-                    <div className="print-grid">
-                        {filtered.map(res => (
-                            <div key={res.id} className="print-card">
-                                <div className="print-card-header">
-                                    <span>G-{res.tableNumber.toString().padStart(2, '0')}</span>
-                                    <span>{res.adultCount + res.childCount} Kişi</span>
-                                </div>
-                                <div className="text-xs"><strong>{res.customerName}</strong></div>
-                                <div className="text-[10px]">{res.phone}</div>
-                                {res.orders?.length > 0 && <div className="text-[9px] mt-1 italic">{res.orders.map(o => o.name).join(', ')}</div>}
-                            </div>
-                        ))}
+                    
+                    <div className="print-list-container">
+                        <table className="print-table">
+                            <thead>
+                                <tr>
+                                    <th style={{width: '60px'}}>Masa</th>
+                                    <th style={{width: '25%'}}>Misafir</th>
+                                    <th style={{width: '15%', textAlign:'center'}}>Kişi</th>
+                                    <th>Notlar</th>
+                                    <th style={{width: '35%'}}>Siparişler</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {filtered.map(res => (
+                                    <tr key={res.id}>
+                                        <td style={{fontSize: '14pt', fontWeight: 'bold'}}>G-{res.tableNumber.toString().padStart(2, '0')}</td>
+                                        <td>
+                                            <div style={{fontWeight: 'bold'}}>{res.customerName}</div>
+                                            <div style={{fontSize: '9pt', marginTop: '4px'}}>{res.phone}</div>
+                                        </td>
+                                        <td style={{textAlign: 'center', fontSize:'11pt'}}>
+                                            {res.adultCount} Yet. + {res.childCount} Çoc.
+                                        </td>
+                                        <td style={{fontStyle: 'italic'}}>{res.note || '-'}</td>
+                                        <td>
+                                            {res.orders && res.orders.length > 0 ? (
+                                                <div style={{fontSize: '9pt'}}>
+                                                    {res.orders.map((o, i) => (
+                                                        <div key={i}>• <strong>{o.quantity}x</strong> {o.name}</div>
+                                                    ))}
+                                                </div>
+                                            ) : '-'}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
                     </div>
 
                     {/* PDF Stilinde İsim Kartları Yazdırma Şablonu */}
@@ -755,8 +824,8 @@
                         {filtered.map(res => (
                             <div key={res.id} className="name-card">
                                 <div className="name-card-title">SAYIN</div>
-                                <div className="name-card-name">{res.customerName}</div>
-                                <img src="https://uluirmakmtal.meb.k12.tr/tema/okul_logo.png" alt="Logo" className="name-card-logo" />
+                                <div className="name-card-name" style={{fontSize: calculateFontSize(res.customerName)}}>{res.customerName}</div>
+                                <img src="https://res.cloudinary.com/dejx0brol/image/upload/v1771331131/logo_j1rcjm.png" alt="Logo" className="name-card-logo" />
                             </div>
                         ))}
                     </div>
