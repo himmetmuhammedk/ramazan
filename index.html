@@ -35,7 +35,7 @@
         }
 
         /* Print Container Hiding */
-        .print-header, .print-list-container, .name-cards-container { 
+        .print-header, .print-list-container, .print-list-page, .name-cards-container { 
             position: absolute; 
             width: 1px; 
             height: 1px; 
@@ -54,12 +54,12 @@
         
         @page landscapePage {
             size: A4 landscape;
-            margin: 1cm;
+            margin: 0;
         }
         
         @page portraitPage {
             size: A4 portrait;
-            margin: 1cm;
+            margin: 0;
         }
 
         /* Yazdırma Tasarımı */
@@ -94,40 +94,9 @@
             main { padding: 0 !important; width: 100% !important; height: auto !important; overflow: visible !important; }
             
             /* Liste Yazdırma Modu */
-            body.print-mode-list .print-header { 
+            body.print-mode-list .print-list-page { 
                 display: block !important; 
                 position: static; width: 100%; height: auto; overflow: visible; clip: auto; visibility: visible;
-                margin-bottom: 10px;
-            }
-            
-            body.print-mode-list .print-list-container {
-                display: block !important;
-                position: static; width: 100%; height: auto; overflow: visible; clip: auto; visibility: visible;
-            }
-
-            body.print-mode-list .print-table {
-                width: 100%;
-                border-collapse: collapse;
-                font-size: 9pt; 
-            }
-            
-            body.print-mode-list .print-table th,
-            body.print-mode-list .print-table td {
-                border: 1px solid #000;
-                padding: 4px 5px;
-                vertical-align: top;
-                page-break-inside: avoid;
-                color: black !important;
-            }
-
-            body.print-mode-list .print-table th {
-                background-color: #f3f4f6 !important;
-                font-weight: 800;
-                text-transform: capitalize;
-                text-align: left;
-                -webkit-print-color-adjust: exact;
-                border-bottom: 2px solid #000;
-                padding: 4px;
             }
             
             /* İsim Kartı Yazdırma Modu */
@@ -174,13 +143,14 @@
                 line-height: 1.1; 
                 text-transform: uppercase; 
                 color: black !important; 
-                word-break: break-word;
                 width: 90%; 
                 display: flex;
                 align-items: center;
                 justify-content: center;
                 height: 100%;
-                font-size: 22pt !important;
+                /* font-size removed to allow dynamic sizing via inline style */
+                white-space: nowrap !important; /* Tek satır zorunluluğu */
+                overflow: hidden;
             }
 
             body.print-mode-cards .name-card-logo { 
@@ -314,6 +284,14 @@
         const formatTableDisplay = (tableVal) => {
             if (tableVal === "IHLARA") return "IHLARA";
             return `G-${tableVal.toString().padStart(2, '0')}`;
+        };
+
+        const calculateFontSize = (name) => {
+            const len = name ? name.length : 0;
+            if (len > 25) return '14pt';
+            if (len > 20) return '17pt';
+            if (len > 15) return '19pt';
+            return '22pt';
         };
 
         const Sidebar = ({ stats, onNewReservation, onShowAllMenus, onOpenMenuManagement, selectedDate }) => {
@@ -497,6 +475,13 @@
                     alert("Lütfen zorunlu alanları doldurunuz:\n- Misafir Ad Soyad\n- Yetişkin Sayısı\n- Masa Seçimi\n- İletişim Telefonu");
                     return false;
                 }
+                
+                // Telefon Numarası Kontrolü (10 hane)
+                if (phone.length !== 10) {
+                    alert("Telefon numarası başında 0 olmadan 10 hane olmalıdır (Örn: 5xxxxxxxxx).");
+                    return false;
+                }
+
                 return true;
             };
 
@@ -563,8 +548,23 @@
                                             </select>
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-[10px] text-white/50 font-black uppercase tracking-widest ml-1">İletişim Telefonu <span className="text-red-500">*</span></label>
-                                            <input required value={phone} onChange={e => setPhone(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-2xl px-5 py-4 text-white font-mono" placeholder="05xx..." />
+                                            <label className="text-[10px] text-white/50 font-black uppercase tracking-widest ml-1">İletişim Telefonu (Başında 0 olmadan) <span className="text-red-500">*</span></label>
+                                            <input 
+                                                required 
+                                                type="tel"
+                                                value={phone} 
+                                                onChange={e => {
+                                                    // Sadece rakamları al
+                                                    let val = e.target.value.replace(/\D/g, '');
+                                                    // Başında 0 varsa sil
+                                                    if (val.startsWith('0')) val = val.substring(1);
+                                                    // Maksimum 10 hane
+                                                    setPhone(val.slice(0, 10));
+                                                }} 
+                                                className="w-full bg-slate-800 border border-slate-700 rounded-2xl px-5 py-4 text-white font-mono" 
+                                                placeholder="5xxxxxxxxx" 
+                                                maxLength={10}
+                                            />
                                         </div>
                                     </div>
                                     <div className="space-y-2">
@@ -828,7 +828,10 @@
                                         alignItems: 'center',
                                         justifyContent: 'center',
                                         height: '100%',
-                                        fontSize: '22pt' 
+                                        fontSize: calculateFontSize(res.customerName),
+                                        whiteSpace: 'nowrap',
+                                        wordBreak: 'normal',
+                                        overflow: 'hidden'
                                      }}>
                                         {res.customerName}
                                      </div>
@@ -907,7 +910,8 @@
                                                 <div className="text-[8pt] mt-1 text-black">{res.phone}</div>
                                             </td>
                                             <td className="border border-black p-1 align-middle text-center text-[9pt] text-black">
-                                                {res.adultCount} Yet.<br/>{res.childCount} Çoc.
+                                                {res.adultCount} Yet.
+                                                {res.childCount > 0 && <><br/>{res.childCount} Çoc.</>}
                                             </td>
                                             <td className="border border-black p-1 align-top italic text-[8pt] text-black">{res.note || '-'}</td>
                                             <td className="border border-black p-1 align-top text-black">
@@ -1047,68 +1051,70 @@
 
             return (
                 <div className="flex h-screen w-full bg-slate-950 text-white overflow-hidden">
-                    {/* Liste Yazdırma Şablonu (Servis ve Mutfak İçin) */}
-                    <div className="print-header">
-                         <div style={{borderBottom: '4px solid black', paddingBottom: '10px', marginBottom: '10px', display: 'flex', flexDirection: 'column', gap: '5px'}}>
-                            <div style={{textAlign: 'center'}}>
-                                <h1 style={{fontSize: '18pt', fontWeight: '900', color: 'black', fontFamily: '"Playfair Display", serif', textTransform: 'uppercase', letterSpacing: '2px', lineHeight: '1.2'}}>ULUIRMAK UYGULAMA OTELİ</h1>
-                            </div>
-                            <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end'}}>
-                                <div style={{textAlign: 'left'}}>
-                                    <div style={{fontSize: '8pt', fontWeight: 'bold', color: '#000', textTransform: 'uppercase', letterSpacing: '1px'}}>TARİH</div>
-                                    <div style={{fontSize: '11pt', fontWeight: '900', color: '#000', lineHeight: '1', marginTop: '2px'}}>{selectedDate.split('-').reverse().join('.')}</div>
+                    {/* Liste Yazdırma Şablonu (Servis ve Mutfak İçin) - Önizleme ile Birebir Aynı */}
+                    <div className="print-list-page">
+                        <div className="bg-white w-full h-full p-[10mm] text-black flex flex-col">
+                            
+                            {/* Header Section */}
+                            <div className="border-b-4 border-black pb-2 mb-2 flex flex-col gap-2">
+                                <div className="text-center">
+                                    <h1 className="text-[18pt] font-black text-black font-serif uppercase tracking-widest whitespace-normal leading-tight">ULUIRMAK UYGULAMA OTELİ</h1>
                                 </div>
-                                <div style={{textAlign: 'right'}}>
-                                    <div style={{fontSize: '8pt', fontWeight: 'bold', color: '#000', textTransform: 'uppercase', letterSpacing: '1px'}}>YAZDIRMA SAATİ</div>
-                                    <div style={{fontSize: '11pt', fontWeight: 'bold', color: '#000', lineHeight: '1', marginTop: '2px'}}>{new Date().toLocaleString('tr-TR')}</div>
+                                <div className="flex justify-between items-end">
+                                    <div className="text-left">
+                                        <div className="text-[8pt] font-bold text-black uppercase tracking-widest">TARİH</div>
+                                        <div className="text-[11pt] font-black text-black leading-none mt-1">{selectedDate.split('-').reverse().join('.')}</div>
+                                    </div>
+                                    <div className="text-right">
+                                        <div className="text-[8pt] font-bold text-black uppercase tracking-widest">YAZDIRMA SAATİ</div>
+                                        <div className="text-[11pt] font-bold text-black leading-none mt-1">{new Date().toLocaleString('tr-TR')}</div>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
-                        {/* Stats Bar */}
-                        <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#fff', borderTop: '2px solid #000', borderBottom: '2px solid #000', padding: '5px 10px', marginBottom: '10px', fontSize: '9pt', color: '#000'}}>
-                            <div><strong>Toplam Masa:</strong> {stats.count}</div>
-                            <div style={{padding: '0 15px', borderLeft: '1px solid #000', borderRight: '1px solid #000'}}><strong>Toplam Misafir:</strong> {stats.totalPeople}</div>
-                            <div>{filtered.reduce((a,b)=>a+(b.adultCount||0),0)} Yet. / {filtered.reduce((a,b)=>a+(b.childCount||0),0)} Çoc.</div>
-                        </div>
-                    </div>
-                    
-                    <div className="print-list-container">
-                        <table className="print-table">
-                            <thead>
-                                <tr>
-                                    <th style={{width: '50px'}}>Masa</th>
-                                    <th style={{width: '25%'}}>Misafir</th>
-                                    <th style={{width: '15%', textAlign:'center'}}>Kişi</th>
-                                    <th style={{width: '20%'}}>Notlar</th>
-                                    <th style={{width: '30%'}}>Siparişler</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {filtered.map(res => (
-                                    <tr key={res.id}>
-                                        <td style={{fontSize: '14pt', fontWeight: 'bold', color: '#000', verticalAlign: 'top'}}>
-                                            {formatTableDisplay(res.tableNumber)}
-                                        </td>
-                                        <td style={{verticalAlign: 'top'}}>
-                                            <div style={{fontWeight: '900', fontSize: '10pt', textTransform: 'uppercase', color: '#000'}}>{res.customerName}</div>
-                                            <div style={{fontSize: '8pt', marginTop: '2px', color: '#000'}}>{res.phone}</div>
-                                        </td>
-                                        <td style={{textAlign: 'center', fontSize:'9pt', verticalAlign: 'middle', color: '#000'}}>
-                                            {res.adultCount} Yet.<br/>{res.childCount} Çoc.
-                                        </td>
-                                        <td style={{fontStyle: 'italic', fontSize: '8pt', verticalAlign: 'top', color: '#000'}}>{res.note || '-'}</td>
-                                        <td style={{verticalAlign: 'top', color: '#000'}}>
-                                            {res.orders && res.orders.length > 0 ? (
-                                                <div style={{fontSize: '8pt', lineHeight: '1.2'}}>
-                                                    {res.orders.map(o => `${o.quantity}x ${o.name}`).join(', ')}
-                                                </div>
-                                            ) : '-'}
-                                        </td>
+                            {/* Stats Section */}
+                            <div className="flex justify-between items-center bg-white border-y-2 border-black py-2 px-4 mb-2 text-[10pt] text-black">
+                                <div><strong>Toplam Masa:</strong> {stats.count}</div>
+                                <div className="px-6 border-x border-black"><strong>Toplam Misafir:</strong> {stats.totalPeople}</div>
+                                <div>{filtered.reduce((a,b)=>a+(b.adultCount||0),0)} Yet. / {filtered.reduce((a,b)=>a+(b.childCount||0),0)} Çoc.</div>
+                            </div>
+
+                            {/* Table Section */}
+                            <table className="w-full border-collapse text-[9pt]">
+                                <thead>
+                                    <tr className="bg-gray-100 border-b-2 border-black">
+                                        <th className="border border-black p-1 text-left font-extrabold uppercase w-[50px] text-black">Masa</th>
+                                        <th className="border border-black p-1 text-left font-extrabold uppercase w-[25%] text-black">Misafir</th>
+                                        <th className="border border-black p-1 text-center font-extrabold uppercase w-[15%] text-black">Kişi</th>
+                                        <th className="border border-black p-1 text-left font-extrabold uppercase w-[20%] text-black">Notlar</th>
+                                        <th className="border border-black p-1 text-left font-extrabold uppercase w-[30%] text-black">Siparişler</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    {filtered.map(res => (
+                                        <tr key={res.id}>
+                                            <td className="border border-black p-1 align-top text-[14pt] font-bold text-black">{formatTableDisplay(res.tableNumber)}</td>
+                                            <td className="border border-black p-1 align-top">
+                                                <div className="font-[900] text-[10pt] uppercase text-black">{res.customerName}</div>
+                                                <div className="text-[8pt] mt-1 text-black">{res.phone}</div>
+                                            </td>
+                                            <td className="border border-black p-1 align-middle text-center text-[9pt] text-black">
+                                                {res.adultCount} Yet.
+                                                {res.childCount > 0 && <><br/>{res.childCount} Çoc.</>}
+                                            </td>
+                                            <td className="border border-black p-1 align-top italic text-[8pt] text-black">{res.note || '-'}</td>
+                                            <td className="border border-black p-1 align-top text-black">
+                                                {res.orders && res.orders.length > 0 ? (
+                                                    <div className="text-[8pt] text-black leading-tight">
+                                                        {res.orders.map(o => `${o.quantity}x ${o.name}`).join(', ')}
+                                                    </div>
+                                                ) : '-'}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
 
                     {/* PDF Stilinde İsim Kartları Yazdırma Şablonu */}
@@ -1116,7 +1122,7 @@
                         {filtered.map(res => (
                             <div key={res.id} className="name-card">
                                 <div className="name-card-title">SAYIN</div>
-                                <div className="name-card-name" style={{fontSize: '22pt'}}>{res.customerName}</div>
+                                <div className="name-card-name" style={{fontSize: calculateFontSize(res.customerName)}}>{res.customerName}</div>
                                 <img src="https://res.cloudinary.com/dejx0brol/image/upload/v1771331131/logo_j1rcjm.png" alt="Logo" className="name-card-logo" />
                             </div>
                         ))}
@@ -1144,9 +1150,24 @@
                                 <div className="col-span-1">Masa</div><div className="col-span-2">Durum</div><div className="col-span-3">Misafir</div><div className="col-span-1 text-center">Kişi</div><div className="col-span-3">Sipariş Özeti</div><div className="col-span-2 text-right">İşlem</div>
                             </div>
                             <div className="flex-1 overflow-y-auto custom-scrollbar divide-y divide-slate-800">
-                                {TABLE_LIST.map((tableVal) => {
-                                    const res = filtered.find(r => r.tableNumber === tableVal);
-                                    return (
+                                {(() => {
+                                    // Masaları sırala: Önce dolu masalar, sonra boş masalar
+                                    // Kendi içlerinde masa numarasına göre sıralı
+                                    const sortedTables = TABLE_LIST.map(tableVal => {
+                                        const res = filtered.find(r => r.tableNumber === tableVal);
+                                        return { tableVal, res };
+                                    }).sort((a, b) => {
+                                        // 1. Durum (Dolu önce gelir)
+                                        if (a.res && !b.res) return -1;
+                                        if (!a.res && b.res) return 1;
+
+                                        // 2. Masa Numarası (IHLARA en sonda)
+                                        if (a.tableVal === "IHLARA") return 1;
+                                        if (b.tableVal === "IHLARA") return -1;
+                                        return (a.tableVal) - (b.tableVal);
+                                    });
+
+                                    return sortedTables.map(({ tableVal, res }) => (
                                         <div key={tableVal} onClick={() => setModal({ open: true, data: res || { tableNumber: tableVal } })} className={`grid grid-cols-12 gap-4 px-8 py-5 items-center table-row-hover cursor-pointer ${res ? 'bg-amber-500/[0.03]' : ''}`}>
                                             <div className="col-span-1">
                                                 <span className={`text-xl font-black ${res ? 'text-amber-500' : 'text-white/20'}`}>
@@ -1181,8 +1202,8 @@
                                                 {res && <button onClick={(e) => { e.stopPropagation(); handleDelete(res.id); }} className="p-2 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500 hover:text-white transition-all"><i className="fas fa-trash-alt"></i></button>}
                                             </div>
                                         </div>
-                                    );
-                                })}
+                                    ));
+                                })()}
                             </div>
                         </div>
                     </main>
