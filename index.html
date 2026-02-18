@@ -476,9 +476,9 @@
                     return false;
                 }
                 
-                // Telefon Numarası Kontrolü (10 hane)
-                if (phone.length !== 10) {
-                    alert("Telefon numarası başında 0 olmadan 10 hane olmalıdır (Örn: 5xxxxxxxxx).");
+                // Telefon Numarası Kontrolü (10 hane veya 3 hane dahili)
+                if (phone.length !== 10 && phone.length !== 3) {
+                    alert("Telefon numarası başında 0 olmadan 10 hane (5xxxxxxxxx) veya 3 hane (dahili) olmalıdır.");
                     return false;
                 }
 
@@ -562,7 +562,7 @@
                                                     setPhone(val.slice(0, 10));
                                                 }} 
                                                 className="w-full bg-slate-800 border border-slate-700 rounded-2xl px-5 py-4 text-white font-mono" 
-                                                placeholder="5xxxxxxxxx" 
+                                                placeholder="5xxxxxxxxx veya Dahili" 
                                                 maxLength={10}
                                             />
                                         </div>
@@ -681,29 +681,29 @@
             const INITIAL_MENU_STRUCTURE = {
                 "GÜNÜN MENÜSÜ": [{ name: "GÜNÜN MENÜSÜ", price: "300,00" }],
                 "İFTAR MENÜLERİ": [
-                    { name: "İFTAR ET SOTE", price: "700,00" }, { name: "İFTAR PİLİÇ SARMA", price: "500,00" },
+                    { name: "İFTAR ET SOTE", price: "750,00" }, { name: "İFTAR PİLİÇ SARMA", price: "550,00" },
                     { name: "İFTAR ROSTO KÖFTE", price: "700,00" }, { name: "İFTAR TAVUK SOTE", price: "500,00" },
-                    { name: "İFTAR ULUIRMAK KEBABI", price: "600,00" }, { name: "İFTAR ULUIRMAK KÖFTE", price: "700,00" }
+                    { name: "İFTAR ULUIRMAK KEBABI", price: "650,00" }, { name: "İFTAR ULUIRMAK KÖFTE", price: "700,00" }
                 ],
                 "ALAKART MENÜLER": [
                     { name: "TAVUK SOTE", price: "350,00" }, { name: "TAVUK ŞİŞ", price: "350,00" },
-                    { name: "TAVUK BONFİLE", price: "350,00" }, { name: "MANTAR SOTE", price: "350,00" },
-                    { name: "ET SOTE", price: "400,00" }, { name: "SAC KAVURMA", price: "500,00" },
-                    { name: "KARIŞIK SOTE", price: "400,00" }, { name: "KARIŞIK IZGARA", price: "500,00" },
-                    { name: "IZGARA KÖFTE", price: "400,00" }, { name: "KILIÇARSLAN ÇÖKERTMESİ", price: "350,00" }
+                    { name: "TAVUK BONFİLE", price: "350,00" }, { name: "MANTAR SOTE", price: "400,00" },
+                    { name: "ET SOTE", price: "450,00" }, { name: "SAC KAVURMA", price: "600,00" },
+                    { name: "KARIŞIK SOTE", price: "450,00" }, { name: "KARIŞIK IZGARA", price: "600,00" },
+                    { name: "IZGARA KÖFTE", price: "400,00" }, { name: "KILIÇARSLAN ÇÖKERTMESİ", price: "450,00" }
                 ],
                 "TATLILAR": [
-                    { name: "HELVADERE", price: "75,00" }, { name: "SÜTLAÇ", price: "65,00" }, { name: "HASANDĞI ZİRVESİ", price: "150,00" },
-                    { name: "TRİLEÇE", price: "80,00" }, { name: "REVANİ", price: "65,00" }, { name: "GÜZ GÜNEŞİ", price: "65,00" },
-                    { name: "GÜLLAÇ", price: "65,00" }, { name: "KALBURABASTI", price: "65,00" }, { name: "PROFİTEROL", price: "150,00" },
-                    { name: "İNCİM", price: "120,00" }, { name: "LATTEM", price: "100,00" }, { name: "İNCELEK", price: "70,00" },
-                    { name: "KADAYIF BURMA", price: "175,00" }, { name: "MAGNOLYA", price: "65,00" }
+                    { name: "HELVADERE", price: "100,00" }, { name: "SÜTLAÇ", price: "90,00" }, { name: "HASANDAĞI ZİRVESİ", price: "190,00" },
+                    { name: "TRİLEÇE", price: "90,00" }, { name: "REVANİ", price: "90,00" }, { name: "GÜZGÜNEŞİ", price: "90,00" },
+                    { name: "GÜLLAÇ", price: "90,00" }, { name: "KALBURABASTI", price: "90,00" }, { name: "PROFİTEROL", price: "140,00" },
+                    { name: "İNCİM", price: "140,00" }, { name: "LATTEM", price: "100,00" }, { name: "İNCELEK", price: "90,00" },
+                    { name: "KADAYIF BURMA", price: "175,00" }, { name: "MAGNOLYA", price: "90,00" }
                 ],
                 "PASTALAR": [
-                    { name: "RULO PASTA", price: "110,00" }, { name: "MOZAİK PASTA", price: "80,00" }, { name: "BALBADEM", price: "140,00" },
-                    { name: "SULTANHANI", price: "160,00" }, { name: "EKLER", price: "25,00" }, { name: "EĞRİ MİNARE", price: "200,00" },
-                    { name: "AŞIKLI HÖYÜK", price: "170,00" }, { name: "EKECİK", price: "170,00" }, { name: "PROFESÖR PASTA", price: "120,00" },
-                    { name: "SARIKARAMAN", price: "200,00" }, { name: "TOPAKKAYA", price: "80,00" }, { name: "BELİSIRMA", price: "100,00" }
+                    { name: "RULO PASTA", price: "110,00" }, { name: "MOZAİK PASTA", price: "90,00" }, { name: "BALBADEM", price: "175,00" },
+                    { name: "SULTANHANI", price: "175,00" }, { name: "EKLER", price: "30,00" }, { name: "EĞRİ MİNARE", price: "200,00" },
+                    { name: "AŞIKLI HÖYÜK", price: "190,00" }, { name: "EKECİK", price: "200,00" }, { name: "PROFESÖR PASTA", price: "120,00" },
+                    { name: "SARIKARAMAN", price: "250,00" }, { name: "TOPAKKAYA", price: "80,00" }, { name: "BELİSIRMA", price: "100,00" }
                 ]
             };
 
@@ -996,6 +996,13 @@
             };
 
             const sendWhatsAppMessage = (res) => {
+                let cleanPhone = res.phone.replace(/\D/g, '');
+
+                if (cleanPhone.length === 3) {
+                    alert("Dahili numaralara WhatsApp mesajı gönderilemez.");
+                    return;
+                }
+
                 const formattedDate = res.date.split('-').reverse().join('.');
                 // Tarih objesi oluştururken saat 12:00 ekleyerek saat dilimi kaymalarını önlüyoruz
                 const dateObj = new Date(res.date + 'T12:00:00'); 
@@ -1033,7 +1040,7 @@
 
                 const message = `Sayın ${res.customerName},\n\n${formattedDate}\n${dayName}\n\nGelveri\n${peopleInfo}${orderText}\n\niftar yemeği rezervasyonunuz oluşturulmuştur.\n\nİlgi ve nezaketiniz için teşekkür eder, iyi günler dileriz.\nSaygılarımızla.\n\nUluırmak Turizm MTAL\nUygulama Oteli`;
 
-                let cleanPhone = res.phone.replace(/\D/g, '');
+                
                 if (cleanPhone.startsWith('0')) cleanPhone = '90' + cleanPhone.substring(1);
                 window.open(`https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(message)}`, '_blank');
             };
@@ -1197,7 +1204,13 @@ Uygulama Oteli`;
 
                         <div className="flex-1 overflow-hidden flex flex-col bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl main-reservation-list">
                             <div className="grid grid-cols-12 gap-4 px-8 py-5 border-b border-slate-800 bg-slate-800/40 text-[10px] font-black text-white uppercase tracking-widest">
-                                <div className="col-span-1">Masa</div><div className="col-span-2">Durum</div><div className="col-span-3">Misafir</div><div className="col-span-1 text-center">Kişi</div><div className="col-span-3">Sipariş Özeti</div><div className="col-span-2 text-right">İşlem</div>
+                                <div className="col-span-1">Masa</div>
+                                <div className="col-span-1">Durum</div>
+                                <div className="col-span-3">Misafir</div>
+                                <div className="col-span-1 text-center">Kişi</div>
+                                <div className="col-span-2">Notlar</div>
+                                <div className="col-span-2">Sipariş</div>
+                                <div className="col-span-2 text-right">İşlem</div>
                             </div>
                             <div className="flex-1 overflow-y-auto custom-scrollbar divide-y divide-slate-800">
                                 {(() => {
@@ -1224,7 +1237,7 @@ Uygulama Oteli`;
                                                     {formatTableDisplay(tableVal)}
                                                 </span>
                                             </div>
-                                            <div className="col-span-2">{res ? <span className="text-[10px] font-bold text-amber-500 uppercase tracking-widest bg-amber-500/10 px-3 py-1 rounded-full">Dolu</span> : <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest bg-emerald-500/5 px-3 py-1 rounded-full">Boş</span>}</div>
+                                            <div className="col-span-1">{res ? <span className="text-[10px] font-bold text-amber-500 uppercase tracking-widest bg-amber-500/10 px-3 py-1 rounded-full">Dolu</span> : <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest bg-emerald-500/5 px-3 py-1 rounded-full">Boş</span>}</div>
                                             <div className="col-span-3">{res ? <div className="flex flex-col"><span className="font-bold text-sm">{res.customerName}</span><span className="text-xs text-white/50">{res.phone}</span></div> : <span className="text-xs text-white/10">-</span>}</div>
                                             <div className="col-span-1 text-center">
                                                 {res ? (
@@ -1242,7 +1255,14 @@ Uygulama Oteli`;
                                                     </div>
                                                 ) : "-"}
                                             </div>
-                                            <div className="col-span-3">
+                                            <div className="col-span-2">
+                                                {res && res.note ? (
+                                                    <span className="text-xs text-amber-500/80 italic line-clamp-2" title={res.note}>
+                                                        <i className="fas fa-sticky-note mr-1 opacity-50"></i>{res.note}
+                                                    </span>
+                                                ) : <span className="text-xs text-white/10">-</span>}
+                                            </div>
+                                            <div className="col-span-2">
                                                 {res && res.orders?.length > 0 ? (
                                                     <span className="text-xs text-white/60 line-clamp-1">{res.orders.map(o => `${o.quantity} ${o.name}`).join(', ')}</span>
                                                 ) : <span className="text-xs text-white/10">-</span>}
