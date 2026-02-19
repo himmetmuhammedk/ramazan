@@ -114,7 +114,7 @@
             body.print-mode-cards .name-card { 
                 border: 4px double black !important; 
                 display: grid !important;
-                grid-template-rows: 80px 1fr 140px; 
+                grid-template-rows: 80px 1fr 100px; /* Logo satırı 100px'e düşürüldü */
                 align-items: center; 
                 justify-items: center;
                 text-align: center;
@@ -140,8 +140,8 @@
             body.print-mode-cards .name-card-name { 
                 font-family: 'Playfair Display', serif; 
                 font-weight: 900; 
-                line-height: 1.1; 
-                text-transform: uppercase; 
+                line-height: 1.5; 
+                /* text-transform: uppercase; REMOVED to handle via JS for locale support */
                 color: black !important; 
                 width: 90%; 
                 display: flex;
@@ -150,15 +150,16 @@
                 height: 100%;
                 /* font-size removed to allow dynamic sizing via inline style */
                 white-space: nowrap !important; /* Tek satır zorunluluğu */
-                overflow: hidden;
+                overflow: visible !important;
+                padding-top: 10px;
             }
 
             body.print-mode-cards .name-card-logo { 
-                width: 120px; 
-                height: 120px; 
+                width: 100px; 
+                height: 100px; 
                 object-fit: contain; 
-                align-self: start;
-                padding-top: 10px;
+                align-self: center;
+                padding-top: 0;
             }
         }
     </style>
@@ -278,8 +279,8 @@
 
         const CATEGORY_ORDER = ["GÜNÜN MENÜSÜ", "İFTAR MENÜLERİ", "ALAKART MENÜLER", "TATLILAR", "PASTALAR"];
 
-        // Masa Listesi - 1'den 30'a kadar ve IHLARA
-        const TABLE_LIST = [...Array.from({ length: 30 }, (_, i) => i + 1), "IHLARA"];
+        // Masa Listesi - 1'den 40'a kadar ve IHLARA
+        const TABLE_LIST = [...Array.from({ length: 40 }, (_, i) => i + 1), "IHLARA"];
 
         const formatTableDisplay = (tableVal) => {
             if (tableVal === "IHLARA") return "IHLARA";
@@ -681,15 +682,15 @@
             const INITIAL_MENU_STRUCTURE = {
                 "GÜNÜN MENÜSÜ": [{ name: "GÜNÜN MENÜSÜ", price: "300,00" }],
                 "İFTAR MENÜLERİ": [
-                    { name: "İFTAR ET SOTE", price: "750,00" }, { name: "İFTAR PİLİÇ SARMA", price: "550,00" },
-                    { name: "İFTAR ROSTO KÖFTE", price: "700,00" }, { name: "İFTAR TAVUK SOTE", price: "500,00" },
-                    { name: "İFTAR ULUIRMAK KEBABI", price: "650,00" }, { name: "İFTAR ULUIRMAK KÖFTE", price: "700,00" }
+                    { name: "İFTAR ET SOTE", price: "750,00" }, { name: "İFTAR PİLİÇ SARMA", price: "600,00" },
+                    { name: "İFTAR ROSTO KÖFTE", price: "700,00" }, { name: "İFTAR TAVUK SOTE", price: "550,00" },
+                    { name: "İFTAR ULUIRMAK KEBABI", price: "700,00" }, { name: "İFTAR ULUIRMAK KÖFTE", price: "750,00" }
                 ],
                 "ALAKART MENÜLER": [
                     { name: "TAVUK SOTE", price: "350,00" }, { name: "TAVUK ŞİŞ", price: "350,00" },
                     { name: "TAVUK BONFİLE", price: "350,00" }, { name: "MANTAR SOTE", price: "400,00" },
                     { name: "ET SOTE", price: "450,00" }, { name: "SAC KAVURMA", price: "600,00" },
-                    { name: "KARIŞIK SOTE", price: "450,00" }, { name: "KARIŞIK IZGARA", price: "600,00" },
+                    { name: "KARIŞIK SOTE", price: "450,00" }, 
                     { name: "IZGARA KÖFTE", price: "400,00" }, { name: "KILIÇARSLAN ÇÖKERTMESİ", price: "450,00" }
                 ],
                 "TATLILAR": [
@@ -703,12 +704,12 @@
                     { name: "RULO PASTA", price: "110,00" }, { name: "MOZAİK PASTA", price: "90,00" }, { name: "BALBADEM", price: "175,00" },
                     { name: "SULTANHANI", price: "175,00" }, { name: "EKLER", price: "30,00" }, { name: "EĞRİ MİNARE", price: "200,00" },
                     { name: "AŞIKLI HÖYÜK", price: "190,00" }, { name: "EKECİK", price: "200,00" }, { name: "PROFESÖR PASTA", price: "120,00" },
-                    { name: "SARIKARAMAN", price: "250,00" }, { name: "TOPAKKAYA", price: "80,00" }, { name: "BELİSIRMA", price: "100,00" }
+                    { name: "SARIKARAMAN", price: "250,00" }, { name: "TOPAKKAYA", price: "90,00" }, { name: "BELİSIRMA", price: "120,00" }
                 ]
             };
 
             useEffect(() => {
-                const docRef = doc(db, 'settings', 'categorized_menus');
+                const docRef = doc(db, 'settings', 'categorized_menus_v4');
                 const unsubscribe = onSnapshot(docRef, (snap) => {
                     if (snap.exists()) {
                         const dbContent = snap.data().content || {};
@@ -727,7 +728,7 @@
                 const newContent = { ...menus };
                 newContent[category][index].name = value;
                 setMenus(newContent);
-                await setDoc(doc(db, 'settings', 'categorized_menus'), { content: newContent });
+                await setDoc(doc(db, 'settings', 'categorized_menus_v4'), { content: newContent });
             };
 
             const sortedMenus = useMemo(() => {
@@ -807,7 +808,7 @@
                                      style={{
                                         border: '4px double black',
                                         display: 'grid',
-                                        gridTemplateRows: '80px 1fr 140px',
+                                        gridTemplateRows: '80px 1fr 100px',
                                         alignItems: 'center',
                                         justifyItems: 'center',
                                         textAlign: 'center',
@@ -820,8 +821,8 @@
                                      <div style={{
                                         fontFamily: '"Playfair Display", serif', 
                                         fontWeight: '900', 
-                                        lineHeight: '1.1', 
-                                        textTransform: 'uppercase', 
+                                        lineHeight: '1.5', 
+                                        /* textTransform removed here for JS control */
                                         color: 'black', 
                                         width: '90%',
                                         display: 'flex',
@@ -831,11 +832,12 @@
                                         fontSize: calculateFontSize(res.customerName),
                                         whiteSpace: 'nowrap',
                                         wordBreak: 'normal',
-                                        overflow: 'hidden'
+                                        overflow: 'visible',
+                                        paddingTop: '20px'
                                      }}>
-                                        {res.customerName}
+                                        {res.customerName.toLocaleUpperCase('tr-TR')}
                                      </div>
-                                     <img src="https://res.cloudinary.com/dejx0brol/image/upload/v1771331131/logo_j1rcjm.png" alt="Logo" style={{width: '120px', height: '120px', objectFit: 'contain', alignSelf: 'start', paddingTop: '10px'}} />
+                                     <img src="https://res.cloudinary.com/dejx0brol/image/upload/v1771331131/logo_j1rcjm.png" alt="Logo" style={{width: '100px', height: '100px', objectFit: 'contain', alignSelf: 'center', paddingTop: '0'}} />
                                 </div>
                             ))}
                         </div>
@@ -941,22 +943,84 @@
             const [showPrintPreview, setShowPrintPreview] = useState(false);
             const [showListPreview, setShowListPreview] = useState(false);
             const [menuPhone, setMenuPhone] = useState('');
+            const [sortConfig, setSortConfig] = useState({ key: 'default', direction: 'asc' });
 
             useEffect(() => {
                 const unsubscribe1 = onSnapshot(collection(db, 'reservations'), (snap) => {
                     setReservations(snap.docs.map(d => ({ id: d.id, ...d.data() })));
                 });
-                const unsubscribe2 = onSnapshot(doc(db, 'settings', 'categorized_menus'), (snap) => {
+                const unsubscribe2 = onSnapshot(doc(db, 'settings', 'categorized_menus_v4'), (snap) => {
                     if (snap.exists()) setCategorizedMenus(snap.data().content);
                 });
                 return () => { unsubscribe1(); unsubscribe2(); };
             }, []);
 
             const filtered = useMemo(() => {
-                return reservations.filter(r => r.date === selectedDate).sort((a, b) => a.customerName.localeCompare(b.customerName, 'tr'));
+                return reservations.filter(r => r.date === selectedDate).sort((a, b) => {
+                    if (a.tableNumber === "IHLARA" && b.tableNumber !== "IHLARA") return -1;
+                    if (a.tableNumber !== "IHLARA" && b.tableNumber === "IHLARA") return 1;
+                    return a.customerName.localeCompare(b.customerName, 'tr');
+                });
             }, [reservations, selectedDate]);
 
             const stats = { totalPeople: filtered.reduce((a, b) => a + (b.adultCount || 0) + (b.childCount || 0), 0), count: filtered.length };
+
+            const handleSort = (key) => {
+                setSortConfig(current => ({
+                    key,
+                    direction: current.key === key && current.direction === 'asc' ? 'desc' : 'asc'
+                }));
+            };
+
+            const sortedTableList = useMemo(() => {
+                // Base Data Preparation
+                let data = TABLE_LIST.map(tableVal => {
+                    const res = filtered.find(r => r.tableNumber === tableVal);
+                    return { tableVal, res };
+                });
+
+                // Sorting Logic
+                data.sort((a, b) => {
+                     const modifier = sortConfig.direction === 'asc' ? 1 : -1;
+
+                     // 1. Sort by Table Number (Numerik)
+                     if (sortConfig.key === 'tableNumber') {
+                         // IHLARA logic: Treat as 0 (top for ASC)
+                         const valA = a.tableVal === "IHLARA" ? 0 : a.tableVal;
+                         const valB = b.tableVal === "IHLARA" ? 0 : b.tableVal;
+                         return (valA - valB) * modifier;
+                     }
+
+                     // 2. Sort by Customer Name (Alfabetik)
+                     if (sortConfig.key === 'customerName') {
+                         // Dolu masaları her zaman boş masalardan ayır ve sırala
+                         if (a.res && !b.res) return -1;
+                         if (!a.res && b.res) return 1;
+                         
+                         // İkisi de boşsa masa numarasına göre sırala
+                         if (!a.res && !b.res) {
+                            const valA = a.tableVal === "IHLARA" ? 0 : a.tableVal;
+                            const valB = b.tableVal === "IHLARA" ? 0 : b.tableVal;
+                            return valA - valB;
+                         }
+
+                         // İkisi de doluysa isme göre sırala
+                         return a.res.customerName.localeCompare(b.res.customerName, 'tr') * modifier;
+                     }
+
+                     // 3. Default Sort (Existing Logic: Occupied first, then IHLARA last in standard view)
+                     // Durum (Dolu önce gelir)
+                     if (a.res && !b.res) return -1;
+                     if (!a.res && b.res) return 1;
+
+                     // Masa Numarası (IHLARA en sonda - eski default mantığı koruyoruz)
+                     if (a.tableVal === "IHLARA") return 1;
+                     if (b.tableVal === "IHLARA") return -1;
+                     return (a.tableVal) - (b.tableVal);
+                });
+
+                return data;
+            }, [filtered, sortConfig]);
 
             const handleSave = async (data) => {
                 try {
@@ -1064,8 +1128,7 @@ https://www.kisa.link/YrRiq
 
 Saygılarımızla.
 
-Uluırmak Turizm MTAL
-Uygulama Oteli`;
+Uluırmak Turizm MTAL\nUygulama Oteli`;
 
                 window.open(`https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(message)}`, '_blank');
                 setMenuPhone('');
@@ -1156,7 +1219,7 @@ Uygulama Oteli`;
                         {filtered.map(res => (
                             <div key={res.id} className="name-card">
                                 <div className="name-card-title">SAYIN</div>
-                                <div className="name-card-name" style={{fontSize: calculateFontSize(res.customerName)}}>{res.customerName}</div>
+                                <div className="name-card-name" style={{fontSize: calculateFontSize(res.customerName)}}>{res.customerName.toLocaleUpperCase('tr-TR')}</div>
                                 <img src="https://res.cloudinary.com/dejx0brol/image/upload/v1771331131/logo_j1rcjm.png" alt="Logo" className="name-card-logo" />
                             </div>
                         ))}
@@ -1203,77 +1266,67 @@ Uygulama Oteli`;
                         </header>
 
                         <div className="flex-1 overflow-hidden flex flex-col bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl main-reservation-list">
-                            <div className="grid grid-cols-12 gap-4 px-8 py-5 border-b border-slate-800 bg-slate-800/40 text-[10px] font-black text-white uppercase tracking-widest">
-                                <div className="col-span-1">Masa</div>
+                            <div className="grid grid-cols-12 gap-4 px-8 py-5 border-b border-slate-800 bg-slate-800/40 text-[10px] font-black text-white uppercase tracking-widest select-none">
+                                <div className="col-span-1 cursor-pointer flex items-center gap-2 hover:text-amber-500 transition-colors" onClick={() => handleSort('tableNumber')}>
+                                    Masa
+                                    {sortConfig.key === 'tableNumber' && <i className={`fas fa-sort-${sortConfig.direction === 'asc' ? 'up' : 'down'} text-amber-500`}></i>}
+                                    {sortConfig.key !== 'tableNumber' && <i className="fas fa-sort text-slate-600"></i>}
+                                </div>
                                 <div className="col-span-1">Durum</div>
-                                <div className="col-span-3">Misafir</div>
+                                <div className="col-span-3 cursor-pointer flex items-center gap-2 hover:text-amber-500 transition-colors" onClick={() => handleSort('customerName')}>
+                                    Misafir
+                                    {sortConfig.key === 'customerName' && <i className={`fas fa-sort-${sortConfig.direction === 'asc' ? 'up' : 'down'} text-amber-500`}></i>}
+                                    {sortConfig.key !== 'customerName' && <i className="fas fa-sort text-slate-600"></i>}
+                                </div>
                                 <div className="col-span-1 text-center">Kişi</div>
                                 <div className="col-span-2">Notlar</div>
                                 <div className="col-span-2">Sipariş</div>
                                 <div className="col-span-2 text-right">İşlem</div>
                             </div>
                             <div className="flex-1 overflow-y-auto custom-scrollbar divide-y divide-slate-800">
-                                {(() => {
-                                    // Masaları sırala: Önce dolu masalar, sonra boş masalar
-                                    // Kendi içlerinde masa numarasına göre sıralı
-                                    const sortedTables = TABLE_LIST.map(tableVal => {
-                                        const res = filtered.find(r => r.tableNumber === tableVal);
-                                        return { tableVal, res };
-                                    }).sort((a, b) => {
-                                        // 1. Durum (Dolu önce gelir)
-                                        if (a.res && !b.res) return -1;
-                                        if (!a.res && b.res) return 1;
-
-                                        // 2. Masa Numarası (IHLARA en sonda)
-                                        if (a.tableVal === "IHLARA") return 1;
-                                        if (b.tableVal === "IHLARA") return -1;
-                                        return (a.tableVal) - (b.tableVal);
-                                    });
-
-                                    return sortedTables.map(({ tableVal, res }) => (
-                                        <div key={tableVal} onClick={() => setModal({ open: true, data: res || { tableNumber: tableVal } })} className={`grid grid-cols-12 gap-4 px-8 py-5 items-center table-row-hover cursor-pointer ${res ? 'bg-amber-500/[0.03]' : ''}`}>
-                                            <div className="col-span-1">
-                                                <span className={`text-xl font-black ${res ? 'text-amber-500' : 'text-white/20'}`}>
-                                                    {formatTableDisplay(tableVal)}
-                                                </span>
-                                            </div>
-                                            <div className="col-span-1">{res ? <span className="text-[10px] font-bold text-amber-500 uppercase tracking-widest bg-amber-500/10 px-3 py-1 rounded-full">Dolu</span> : <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest bg-emerald-500/5 px-3 py-1 rounded-full">Boş</span>}</div>
-                                            <div className="col-span-3">{res ? <div className="flex flex-col"><span className="font-bold text-sm">{res.customerName}</span><span className="text-xs text-white/50">{res.phone}</span></div> : <span className="text-xs text-white/10">-</span>}</div>
-                                            <div className="col-span-1 text-center">
-                                                {res ? (
-                                                    <div className="flex flex-col items-center justify-center -space-y-1">
-                                                        <div className="flex items-center gap-1 text-emerald-400">
-                                                            <span className="text-sm font-black">{res.adultCount}</span>
-                                                            <span className="text-[8px] font-bold uppercase opacity-60">Y</span>
-                                                        </div>
-                                                        {res.childCount > 0 && (
-                                                            <div className="flex items-center gap-1 text-cyan-400">
-                                                                <span className="text-[11px] font-black">{res.childCount}</span>
-                                                                <span className="text-[8px] font-bold uppercase opacity-60">Ç</span>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                ) : "-"}
-                                            </div>
-                                            <div className="col-span-2">
-                                                {res && res.note ? (
-                                                    <span className="text-xs text-amber-500/80 italic line-clamp-2" title={res.note}>
-                                                        <i className="fas fa-sticky-note mr-1 opacity-50"></i>{res.note}
-                                                    </span>
-                                                ) : <span className="text-xs text-white/10">-</span>}
-                                            </div>
-                                            <div className="col-span-2">
-                                                {res && res.orders?.length > 0 ? (
-                                                    <span className="text-xs text-white/60 line-clamp-1">{res.orders.map(o => `${o.quantity} ${o.name}`).join(', ')}</span>
-                                                ) : <span className="text-xs text-white/10">-</span>}
-                                            </div>
-                                            <div className="col-span-2 text-right flex justify-end gap-2">
-                                                {res && <button onClick={(e) => { e.stopPropagation(); sendWhatsAppMessage(res); }} className="p-2 bg-emerald-500/10 text-emerald-500 rounded-lg"><i className="fab fa-whatsapp"></i></button>}
-                                                {res && <button onClick={(e) => { e.stopPropagation(); handleDelete(res.id); }} className="p-2 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500 hover:text-white transition-all"><i className="fas fa-trash-alt"></i></button>}
-                                            </div>
+                                {sortedTableList.map(({ tableVal, res }) => (
+                                    <div key={tableVal} onClick={() => setModal({ open: true, data: res || { tableNumber: tableVal } })} className={`grid grid-cols-12 gap-4 px-8 py-5 items-center table-row-hover cursor-pointer ${res ? 'bg-amber-500/[0.03]' : ''}`}>
+                                        <div className="col-span-1">
+                                            <span className={`text-xl font-black ${res ? 'text-amber-500' : 'text-white/20'}`}>
+                                                {formatTableDisplay(tableVal)}
+                                            </span>
                                         </div>
-                                    ));
-                                })()}
+                                        <div className="col-span-1">{res ? <span className="text-[10px] font-bold text-amber-500 uppercase tracking-widest bg-amber-500/10 px-3 py-1 rounded-full">Dolu</span> : <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest bg-emerald-500/5 px-3 py-1 rounded-full">Boş</span>}</div>
+                                        <div className="col-span-3">{res ? <div className="flex flex-col"><span className="font-bold text-sm">{res.customerName}</span><span className="text-xs text-white/50">{res.phone}</span></div> : <span className="text-xs text-white/10">-</span>}</div>
+                                        <div className="col-span-1 text-center">
+                                            {res ? (
+                                                <div className="flex flex-col items-center justify-center -space-y-1">
+                                                    <div className="flex items-center gap-1 text-emerald-400">
+                                                        <span className="text-sm font-black">{res.adultCount}</span>
+                                                        <span className="text-[8px] font-bold uppercase opacity-60">Y</span>
+                                                    </div>
+                                                    {res.childCount > 0 && (
+                                                        <div className="flex items-center gap-1 text-cyan-400">
+                                                            <span className="text-[11px] font-black">{res.childCount}</span>
+                                                            <span className="text-[8px] font-bold uppercase opacity-60">Ç</span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ) : "-"}
+                                        </div>
+                                        <div className="col-span-2">
+                                            {res && res.note ? (
+                                                <span className="text-xs text-amber-500/80 italic line-clamp-2" title={res.note}>
+                                                    <i className="fas fa-sticky-note mr-1 opacity-50"></i>{res.note}
+                                                </span>
+                                            ) : <span className="text-xs text-white/10">-</span>}
+                                        </div>
+                                        <div className="col-span-2">
+                                            {res && res.orders?.length > 0 ? (
+                                                <span className="text-xs text-white/60 line-clamp-1">{res.orders.map(o => `${o.quantity} ${o.name}`).join(', ')}</span>
+                                            ) : <span className="text-xs text-white/10">-</span>}
+                                        </div>
+                                        <div className="col-span-2 text-right flex justify-end gap-2">
+                                            {res && <button onClick={(e) => { e.stopPropagation(); sendWhatsAppMessage(res); }} className="p-2 bg-emerald-500/10 text-emerald-500 rounded-lg"><i className="fab fa-whatsapp"></i></button>}
+                                            {res && <button onClick={(e) => { e.stopPropagation(); handleDelete(res.id); }} className="p-2 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500 hover:text-white transition-all"><i className="fas fa-trash-alt"></i></button>}
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     </main>
