@@ -1038,17 +1038,7 @@
                 // Filter by Search Term if active
                 if (searchTerm) {
                     data = data.filter(item => {
-                        // Keep IHLARA always, or just match names? 
-                        // Usually search means "filter by this criteria".
-                        // But IHLARA needs to be visible? Let's assume standard filtering logic:
-                        // Show if matches search OR if it is IHLARA (per "IHLARA continually at top" request? 
-                        // or just standard search? Let's stick to standard search matches for non-IHLARA items, 
-                        // but ensure IHLARA is kept if it matches OR if we want it *always* visible.
-                        // "IHLARA İSİMLİ MASAYI TÜM BU SIRALAMALARDAN MUAF TUT." usually implies sorting order.
-                        // Let's filter strictly by name match to avoid confusion, but handle IHLARA in sort.
-                        
-                        if (item.tableVal === "IHLARA") return true; // Keep IHLARA visible during search? Let's keep it visible based on prompt "SÜREKLİ EN ÜSTTE".
-                        
+                        if (item.tableVal === "IHLARA") return true; 
                         return item.res && item.res.customerName.toLocaleLowerCase('tr-TR').includes(searchTerm.toLocaleLowerCase('tr-TR'));
                     });
                 }
@@ -1102,6 +1092,13 @@
 
                 return data;
             }, [filtered, sortConfig, searchTerm]);
+            
+            // Yazdırma işlemi için ekrandaki sıralamanın aynısını içeren rezervasyon listesi
+            const sortedReservationsForPrint = useMemo(() => {
+                return sortedTableList
+                    .map(item => item.res)
+                    .filter(res => res !== undefined);
+            }, [sortedTableList]);
 
             const handleSave = async (data) => {
                 try {
@@ -1269,7 +1266,7 @@ Uluırmak Turizm MTAL\nUygulama Oteli`;
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {filtered.map(res => (
+                                    {sortedReservationsForPrint.map(res => (
                                         <tr key={res.id}>
                                             <td className="border border-black p-1 align-top text-[14pt] font-bold text-black">{formatTableDisplay(res.tableNumber)}</td>
                                             <td className="border border-black p-1 align-top">
@@ -1297,7 +1294,7 @@ Uluırmak Turizm MTAL\nUygulama Oteli`;
 
                     {/* PDF Stilinde İsim Kartları Yazdırma Şablonu */}
                     <div className="name-cards-container">
-                        {chunkArray(filtered, 8).map((page, pageIndex) => (
+                        {chunkArray(sortedReservationsForPrint, 8).map((page, pageIndex) => (
                             <div key={pageIndex} className="name-cards-page">
                                 {page.map(res => (
                                     <div key={res.id} className="name-card">
@@ -1374,7 +1371,7 @@ Uluırmak Turizm MTAL\nUygulama Oteli`;
                                     {sortConfig.key === 'tableNumber' && <i className={`fas fa-sort-${sortConfig.direction === 'asc' ? 'up' : 'down'} text-amber-500`}></i>}
                                     {sortConfig.key !== 'tableNumber' && <i className="fas fa-sort text-slate-600"></i>}
                                 </div>
-                                <div className="col-span-3 flex items-center gap-2">
+                                <div className="col-span-2 flex items-center gap-2">
                                     {showSearch ? (
                                         <div className="flex-1 flex items-center bg-slate-900 border border-slate-700 rounded-lg overflow-hidden h-7">
                                             <input 
@@ -1408,7 +1405,7 @@ Uluırmak Turizm MTAL\nUygulama Oteli`;
                                     {sortConfig.key !== 'peopleCount' && <i className="fas fa-sort text-slate-600"></i>}
                                 </div>
                                 <div className="col-span-2">Notlar</div>
-                                <div className="col-span-3">Sipariş</div>
+                                <div className="col-span-4">Sipariş</div>
                                 <div className="col-span-1">Kayıt</div>
                                 <div className="col-span-1 text-right">İşlem</div>
                             </div>
@@ -1420,7 +1417,7 @@ Uluırmak Turizm MTAL\nUygulama Oteli`;
                                                 {formatTableDisplay(tableVal)}
                                             </span>
                                         </div>
-                                        <div className="col-span-3">{res ? <div className="flex flex-col"><span className="font-bold text-sm">{res.customerName}</span><span className="text-xs text-white/50">{res.phone}</span></div> : <span className="text-xs text-white/10">-</span>}</div>
+                                        <div className="col-span-2">{res ? <div className="flex flex-col"><span className="font-bold text-sm">{res.customerName}</span><span className="text-xs text-white/50">{res.phone}</span></div> : <span className="text-xs text-white/10">-</span>}</div>
                                         <div className="col-span-1 text-center">
                                             {res ? (
                                                 <div className="flex flex-col items-center justify-center -space-y-1">
@@ -1444,7 +1441,7 @@ Uluırmak Turizm MTAL\nUygulama Oteli`;
                                                 </span>
                                             ) : <span className="text-xs text-white/10">-</span>}
                                         </div>
-                                        <div className="col-span-3">
+                                        <div className="col-span-4">
                                             {res && res.orders?.length > 0 ? (
                                                 <span className="text-xs text-white/60">{res.orders.map(o => `${o.quantity}x ${o.name}`).join(', ')}</span>
                                             ) : <span className="text-xs text-white/10">-</span>}
@@ -1498,14 +1495,14 @@ Uluırmak Turizm MTAL\nUygulama Oteli`;
                     )}
                     {showPrintPreview && (
                         <PrintPreviewModal 
-                            reservations={filtered} 
+                            reservations={sortedReservationsForPrint} 
                             onClose={() => setShowPrintPreview(false)} 
                             onConfirmPrint={handleConfirmPrintCards} 
                         />
                     )}
                     {showListPreview && (
                         <ListPreviewModal 
-                            reservations={filtered} 
+                            reservations={sortedReservationsForPrint} 
                             selectedDate={selectedDate}
                             stats={stats}
                             onClose={() => setShowListPreview(false)} 
