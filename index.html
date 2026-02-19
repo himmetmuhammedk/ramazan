@@ -282,6 +282,9 @@
 
         // Masa Listesi - 1'den 40'a kadar ve IHLARA
         const TABLE_LIST = [...Array.from({ length: 40 }, (_, i) => i + 1), "IHLARA"];
+        
+        // Personel Listesi
+        const STAFF_LIST = ["HİMMET", "KENAN", "SERDAR", "İBRAHİM", "BATUHAN"];
 
         const formatTableDisplay = (tableVal) => {
             if (tableVal === "IHLARA") return "IHLARA";
@@ -437,6 +440,7 @@
             const [tableNumber, setTableNumber] = useState(data?.tableNumber || ''); // Varsayılan boş
             const [note, setNote] = useState(data?.note || '');
             const [orders, setOrders] = useState(data?.orders || []);
+            const [recordedBy, setRecordedBy] = useState(data?.recordedBy || '');
 
             const totalPrice = useMemo(() => {
                 return orders.reduce((sum, item) => {
@@ -484,6 +488,11 @@
                     return false;
                 }
 
+                if (!recordedBy) {
+                    alert("Lütfen rezervasyonu kayıt alan personeli seçiniz.");
+                    return false;
+                }
+
                 return true;
             };
 
@@ -496,7 +505,7 @@
             const handleFinalSave = () => {
                 if (validateFields()) {
                     onSave({
-                        customerName, adultCount, childCount, phone, tableNumber, note, orders, date: selectedDate
+                        customerName, adultCount, childCount, phone, tableNumber, note, orders, date: selectedDate, recordedBy
                     });
                 }
             };
@@ -568,6 +577,15 @@
                                                 maxLength={10}
                                             />
                                         </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] text-white/50 font-black uppercase tracking-widest ml-1">Kayıt Alan Personel <span className="text-red-500">*</span></label>
+                                        <select value={recordedBy} onChange={e => setRecordedBy(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-2xl px-5 py-4 text-white">
+                                            <option value="" disabled>Seçiniz</option>
+                                            {STAFF_LIST.map(s => (
+                                                <option key={s} value={s} className="bg-slate-900">{s}</option>
+                                            ))}
+                                        </select>
                                     </div>
                                     <div className="space-y-2">
                                         <label className="text-[10px] text-white/50 font-black uppercase tracking-widest ml-1">Özel Notlar</label>
@@ -1258,8 +1276,11 @@ Uluırmak Turizm MTAL\nUygulama Oteli`;
 
                     <main className="flex-1 p-8 flex flex-col overflow-hidden">
                         <header className="flex justify-between items-center mb-8 no-print">
-                            <div className="flex items-center gap-6">
-                                <h1 className="text-4xl font-bold text-amber-500">Uluırmak Uygulama Oteli</h1>
+                            <div className="flex items-center gap-4">
+                                <img src="https://res.cloudinary.com/dejx0brol/image/upload/v1771331131/logo_j1rcjm.png" alt="Uluırmak Logo" className="h-14 w-auto object-contain drop-shadow-lg" />
+                                <h1 className="text-4xl font-bold text-amber-500 tracking-tight">Uluırmak Uygulama Oteli</h1>
+                            </div>
+                            <div className="flex items-center gap-3">
                                 <div className="flex items-center gap-2 bg-slate-900/50 p-2 rounded-xl border border-slate-800">
                                     <div className="relative group">
                                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -1281,8 +1302,6 @@ Uluırmak Turizm MTAL\nUygulama Oteli`;
                                         <i className="fab fa-whatsapp text-lg"></i> Menü Gönder
                                     </button>
                                 </div>
-                            </div>
-                            <div className="flex items-center gap-3">
                                 <button onClick={() => setShowListPreview(true)} className="bg-slate-800 hover:bg-slate-700 text-amber-500 border border-slate-700 p-3 rounded-2xl shadow-xl transition-all flex items-center gap-2 font-bold px-5">
                                     <i className="fas fa-print"></i> Liste Yazdır
                                 </button>
@@ -1303,7 +1322,7 @@ Uluırmak Turizm MTAL\nUygulama Oteli`;
                                     {sortConfig.key === 'tableNumber' && <i className={`fas fa-sort-${sortConfig.direction === 'asc' ? 'up' : 'down'} text-amber-500`}></i>}
                                     {sortConfig.key !== 'tableNumber' && <i className="fas fa-sort text-slate-600"></i>}
                                 </div>
-                                <div className="col-span-1">Durum</div>
+                                <div className="col-span-1">Kayıt</div>
                                 <div className="col-span-3 flex items-center gap-2">
                                     {showSearch ? (
                                         <div className="flex-1 flex items-center bg-slate-900 border border-slate-700 rounded-lg overflow-hidden h-7">
@@ -1349,7 +1368,7 @@ Uluırmak Turizm MTAL\nUygulama Oteli`;
                                                 {formatTableDisplay(tableVal)}
                                             </span>
                                         </div>
-                                        <div className="col-span-1">{res ? <span className="text-[10px] font-bold text-amber-500 uppercase tracking-widest bg-amber-500/10 px-3 py-1 rounded-full">Dolu</span> : <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest bg-emerald-500/5 px-3 py-1 rounded-full">Boş</span>}</div>
+                                        <div className="col-span-1">{res ? <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{res.recordedBy}</span> : <span className="text-[10px] font-bold text-slate-700 uppercase tracking-widest">-</span>}</div>
                                         <div className="col-span-3">{res ? <div className="flex flex-col"><span className="font-bold text-sm">{res.customerName}</span><span className="text-xs text-white/50">{res.phone}</span></div> : <span className="text-xs text-white/10">-</span>}</div>
                                         <div className="col-span-1 text-center">
                                             {res ? (
