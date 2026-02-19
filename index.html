@@ -943,7 +943,7 @@
         const ListPreviewModal = ({ reservations, selectedDate, stats, onClose, onConfirmPrint }) => {
             // Dinamik sayfalama kullanarak listeyi böl
             const chunkedList = chunkListDynamic(reservations);
-            const printRef = useRef(null);
+            // const printRef = useRef(null); // printRef kaldırıldı, çünkü artık kullanılmıyor
 
             // Sipariş Toplamlarını Hesapla
             const orderTotals = useMemo(() => {
@@ -962,27 +962,7 @@
                 return Object.entries(totals).sort((a, b) => b[1] - a[1]); // En çoktan aza doğru sırala
             }, [reservations]);
 
-            const handleSaveImage = async () => {
-                if (!printRef.current) return;
-                try {
-                    // Ref'in tamamını (tüm sayfaları kapsayan div) yakalar
-                    const canvas = await window.html2canvas(printRef.current, {
-                        scale: 2,
-                        useCORS: true, 
-                        allowTaint: true,
-                        backgroundColor: '#f1f5f9', // Arkaplan rengi
-                        scrollY: -window.scrollY // Scroll kaymasını düzelt
-                    });
-                    
-                    const link = document.createElement('a');
-                    link.download = `Rezervasyon_Listesi_${selectedDate}.png`;
-                    link.href = canvas.toDataURL('image/png');
-                    link.click();
-                } catch (err) {
-                    console.error("Görüntü oluşturulamadı", err);
-                    alert("Görüntü kaydedilirken bir hata oluştu.");
-                }
-            };
+            // handleSaveImage fonksiyonu kaldırıldı
 
             return (
                 <div className="fixed inset-0 z-[80] flex flex-col bg-slate-950/95 backdrop-blur-xl animate-fade-in no-print p-4 md:p-8">
@@ -993,9 +973,7 @@
                         </h2>
                         <div className="flex gap-4">
                              <button onClick={onClose} className="px-6 py-3 rounded-xl text-white/50 hover:text-white font-bold transition-all">Kapat</button>
-                             <button onClick={handleSaveImage} className="px-8 py-3 bg-slate-800 hover:bg-slate-700 text-amber-500 border border-slate-700 rounded-xl font-bold shadow-lg flex items-center gap-2">
-                                 <i className="fas fa-save"></i> Listeyi Resim Olarak Kaydet
-                             </button>
+                             {/* "Listeyi Resim Olarak Kaydet" butonu kaldırıldı */}
                              <button onClick={onConfirmPrint} className="px-8 py-3 bg-amber-600 hover:bg-amber-500 text-white rounded-xl font-bold shadow-lg flex items-center gap-2">
                                  <i className="fas fa-print"></i> Yazdır
                              </button>
@@ -1004,7 +982,7 @@
                     
                     {/* Preview Area (Scrollable) - A4 Portrait Simulation with Pagination */}
                     <div className="flex-1 overflow-y-auto custom-scrollbar bg-slate-900/50 rounded-3xl border border-slate-700 p-8 flex justify-center">
-                        <div className="flex flex-col gap-8 items-center" ref={printRef}>
+                        <div className="flex flex-col gap-8 items-center">
                         {chunkedList.map((pageItems, pageIndex) => (
                             <div key={pageIndex} className="bg-white w-full max-w-[210mm] min-h-[297mm] p-[10mm] shadow-2xl text-black flex flex-col relative box-border">
                                 
@@ -1696,66 +1674,4 @@ Uluırmak Turizm MTAL\nUygulama Oteli`;
     </script>
 <script type="module" src="/index.tsx"></script>
 </body>
-</html>--- START OF FILE README.md ---
-
-# Ramazan Ayı Restoran Rezervasyon Sistemi
-
-Bu proje, Ramazan ayı boyunca restoranlar için özel olarak tasarlanmış, modern ve kullanıcı dostu bir rezervasyon yönetim sistemidir. React ve Firebase teknolojileri kullanılarak geliştirilmiştir.
-
-## Özellikler
-
-*   **Dinamik Rezervasyon Yönetimi:** Masaların doluluk durumunu anlık olarak takip edin, yeni rezervasyonlar ekleyin, mevcutları düzenleyin veya iptal edin.
-*   **Görsel Masa Planı:** Restoranınızın masa düzenini dijital ortamda görüntüleyin. Dolu ve boş masaları renk kodları ile kolayca ayırt edin.
-*   **Detaylı Müşteri Bilgileri:** Müşteri adı, kişi sayısı, telefon numarası ve özel notlar gibi detayları kaydedin.
-*   **İftar Sayacı:** İftar vaktine kalan süreyi canlı olarak takip edin.
-*   **İstatistikler:** Toplam rezervasyon sayısı ve beklenen misafir sayısı gibi verileri anlık olarak görüntüleyin.
-*   **Kullanıcı Dostu Arayüz:** Modern, şık ve kullanımı kolay arayüz tasarımı.
-*   **Mobil Uyumlu (PWA):** Tüm cihazlarda (masaüstü, tablet, mobil) sorunsuz çalışır.
-*   **Firebase Entegrasyonu:** Verileriniz güvenli bir şekilde bulutta saklanır ve tüm cihazlarınızda senkronize olur.
-
-## Kurulum ve Çalıştırma
-
-1.  Bu projeyi bilgisayarınıza indirin veya kopyalayın.
-2.  Terminali açın ve proje dizinine gidin.
-3.  Gerekli paketleri yüklemek için `npm install` komutunu çalıştırın.
-4.  Uygulamayı başlatmak için `npm start` komutunu çalıştırın.
-5.  Tarayıcınızda `http://localhost:3000` adresine giderek uygulamayı kullanmaya başlayabilirsiniz.
-
-## Teknolojiler
-
-*   React
-*   TypeScript
-*   Tailwind CSS
-*   Firebase (Firestore)
-*   Font Awesome
-
-## Lisans
-
-Bu proje MIT lisansı altında lisanslanmıştır.--- START OF FILE tsconfig.json ---
-
-{
-  "compilerOptions": {
-    "target": "es5",
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
-    "allowJs": true,
-    "skipLibCheck": true,
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "strict": true,
-    "forceConsistentCasingInFileNames": true,
-    "noFallthroughCasesInSwitch": true,
-    "module": "esnext",
-    "moduleResolution": "node",
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "noEmit": true,
-    "jsx": "react-jsx"
-  },
-  "include": [
-    "src"
-  ]
-}
+</html>
