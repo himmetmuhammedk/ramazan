@@ -114,7 +114,7 @@
             body.print-mode-cards .name-card { 
                 border: 4px double black !important; 
                 display: grid !important;
-                grid-template-rows: 80px 1fr 100px; /* Logo satırı 100px'e düşürüldü */
+                grid-template-rows: 60px 1fr 100px; /* Logo satırı 100px, Üst satır 60px yapıldı (SAYIN yukarı kaydı) */
                 align-items: center; 
                 justify-items: center;
                 text-align: center;
@@ -152,7 +152,7 @@
                 white-space: nowrap !important; /* Tek satır zorunluluğu */
                 overflow: visible !important;
                 padding-top: 0 !important; 
-                padding-bottom: 20px !important;
+                padding-bottom: 40px !important; /* İsim yukarı alındı */
             }
 
             body.print-mode-cards .name-card-logo { 
@@ -809,7 +809,7 @@
                                      style={{
                                         border: '4px double black',
                                         display: 'grid',
-                                        gridTemplateRows: '80px 1fr 100px',
+                                        gridTemplateRows: '60px 1fr 100px',
                                         alignItems: 'center',
                                         justifyItems: 'center',
                                         textAlign: 'center',
@@ -835,7 +835,7 @@
                                         wordBreak: 'normal',
                                         overflow: 'visible',
                                         paddingTop: '0px',
-                                        paddingBottom: '20px'
+                                        paddingBottom: '40px'
                                      }}>
                                         {res.customerName.toLocaleUpperCase('tr-TR')}
                                      </div>
@@ -946,6 +946,10 @@
             const [showListPreview, setShowListPreview] = useState(false);
             const [menuPhone, setMenuPhone] = useState('');
             const [sortConfig, setSortConfig] = useState({ key: 'default', direction: 'asc' });
+            
+            // Search States
+            const [searchTerm, setSearchTerm] = useState('');
+            const [showSearch, setShowSearch] = useState(false);
 
             useEffect(() => {
                 const unsubscribe1 = onSnapshot(collection(db, 'reservations'), (snap) => {
@@ -981,48 +985,73 @@
                     return { tableVal, res };
                 });
 
+                // Filter by Search Term if active
+                if (searchTerm) {
+                    data = data.filter(item => {
+                        // Keep IHLARA always, or just match names? 
+                        // Usually search means "filter by this criteria".
+                        // But IHLARA needs to be visible? Let's assume standard filtering logic:
+                        // Show if matches search OR if it is IHLARA (per "IHLARA continually at top" request? 
+                        // or just standard search? Let's stick to standard search matches for non-IHLARA items, 
+                        // but ensure IHLARA is kept if it matches OR if we want it *always* visible.
+                        // "IHLARA İSİMLİ MASAYI TÜM BU SIRALAMALARDAN MUAF TUT." usually implies sorting order.
+                        // Let's filter strictly by name match to avoid confusion, but handle IHLARA in sort.
+                        
+                        if (item.tableVal === "IHLARA") return true; // Keep IHLARA visible during search? Let's keep it visible based on prompt "SÜREKLİ EN ÜSTTE".
+                        
+                        return item.res && item.res.customerName.toLocaleLowerCase('tr-TR').includes(searchTerm.toLocaleLowerCase('tr-TR'));
+                    });
+                }
+
                 // Sorting Logic
                 data.sort((a, b) => {
+                     // RULE: IHLARA ALWAYS TOP
+                     if (a.tableVal === "IHLARA") return -1;
+                     if (b.tableVal === "IHLARA") return 1;
+
                      const modifier = sortConfig.direction === 'asc' ? 1 : -1;
 
                      // 1. Sort by Table Number (Numerik)
                      if (sortConfig.key === 'tableNumber') {
-                         // IHLARA logic: Treat as 0 (top for ASC)
-                         const valA = a.tableVal === "IHLARA" ? 0 : a.tableVal;
-                         const valB = b.tableVal === "IHLARA" ? 0 : b.tableVal;
+                         const valA = a.tableVal; // IHLARA handled above
+                         const valB = b.tableVal;
                          return (valA - valB) * modifier;
                      }
 
                      // 2. Sort by Customer Name (Alfabetik)
                      if (sortConfig.key === 'customerName') {
-                         // Dolu masaları her zaman boş masalardan ayır ve sırala
                          if (a.res && !b.res) return -1;
                          if (!a.res && b.res) return 1;
                          
-                         // İkisi de boşsa masa numarasına göre sırala
                          if (!a.res && !b.res) {
-                            const valA = a.tableVal === "IHLARA" ? 0 : a.tableVal;
-                            const valB = b.tableVal === "IHLARA" ? 0 : b.tableVal;
-                            return valA - valB;
+                            return (a.tableVal) - (b.tableVal);
                          }
-
-                         // İkisi de doluysa isme göre sırala
                          return a.res.customerName.localeCompare(b.res.customerName, 'tr') * modifier;
                      }
 
-                     // 3. Default Sort (Existing Logic: Occupied first, then IHLARA last in standard view)
-                     // Durum (Dolu önce gelir)
+                     // 3. Sort by People Count
+                     if (sortConfig.key === 'peopleCount') {
+                         if (a.res && !b.res) return -1;
+                         if (!a.res && b.res) return 1;
+                         
+                         if (!a.res && !b.res) {
+                            return (a.tableVal) - (b.tableVal);
+                         }
+
+                         const totalA = (a.res.adultCount || 0) + (a.res.childCount || 0);
+                         const totalB = (b.res.adultCount || 0) + (b.res.childCount || 0);
+                         return (totalA - totalB) * modifier;
+                     }
+
+                     // 4. Default Sort (Occupied first, then Table Number)
                      if (a.res && !b.res) return -1;
                      if (!a.res && b.res) return 1;
 
-                     // Masa Numarası (IHLARA en sonda - eski default mantığı koruyoruz)
-                     if (a.tableVal === "IHLARA") return 1;
-                     if (b.tableVal === "IHLARA") return -1;
                      return (a.tableVal) - (b.tableVal);
                 });
 
                 return data;
-            }, [filtered, sortConfig]);
+            }, [filtered, sortConfig, searchTerm]);
 
             const handleSave = async (data) => {
                 try {
@@ -1268,26 +1297,53 @@ Uluırmak Turizm MTAL\nUygulama Oteli`;
                         </header>
 
                         <div className="flex-1 overflow-hidden flex flex-col bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl main-reservation-list">
-                            <div className="grid grid-cols-12 gap-4 px-8 py-5 border-b border-slate-800 bg-slate-800/40 text-[10px] font-black text-white uppercase tracking-widest select-none">
+                            <div className="grid grid-cols-12 gap-4 px-8 py-3 border-b border-slate-800 bg-slate-800/40 text-[10px] font-black text-white uppercase tracking-widest select-none">
                                 <div className="col-span-1 cursor-pointer flex items-center gap-2 hover:text-amber-500 transition-colors" onClick={() => handleSort('tableNumber')}>
                                     Masa
                                     {sortConfig.key === 'tableNumber' && <i className={`fas fa-sort-${sortConfig.direction === 'asc' ? 'up' : 'down'} text-amber-500`}></i>}
                                     {sortConfig.key !== 'tableNumber' && <i className="fas fa-sort text-slate-600"></i>}
                                 </div>
                                 <div className="col-span-1">Durum</div>
-                                <div className="col-span-3 cursor-pointer flex items-center gap-2 hover:text-amber-500 transition-colors" onClick={() => handleSort('customerName')}>
-                                    Misafir
-                                    {sortConfig.key === 'customerName' && <i className={`fas fa-sort-${sortConfig.direction === 'asc' ? 'up' : 'down'} text-amber-500`}></i>}
-                                    {sortConfig.key !== 'customerName' && <i className="fas fa-sort text-slate-600"></i>}
+                                <div className="col-span-3 flex items-center gap-2">
+                                    {showSearch ? (
+                                        <div className="flex-1 flex items-center bg-slate-900 border border-slate-700 rounded-lg overflow-hidden h-7">
+                                            <input 
+                                                type="text" 
+                                                className="w-full bg-transparent border-none text-white text-xs px-2 py-1 outline-none uppercase placeholder-slate-600"
+                                                placeholder="İsim ara..."
+                                                value={searchTerm}
+                                                onChange={(e) => setSearchTerm(e.target.value)}
+                                                autoFocus
+                                            />
+                                            <button onClick={() => { setShowSearch(false); setSearchTerm(''); }} className="px-2 text-slate-500 hover:text-red-500">
+                                                <i className="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div className="flex-1 cursor-pointer flex items-center gap-2 hover:text-amber-500 transition-colors" onClick={() => handleSort('customerName')}>
+                                            Misafir
+                                            {sortConfig.key === 'customerName' && <i className={`fas fa-sort-${sortConfig.direction === 'asc' ? 'up' : 'down'} text-amber-500`}></i>}
+                                            {sortConfig.key !== 'customerName' && <i className="fas fa-sort text-slate-600"></i>}
+                                        </div>
+                                    )}
+                                    {!showSearch && (
+                                        <button onClick={() => setShowSearch(true)} className="text-slate-500 hover:text-white transition-colors">
+                                            <i className="fas fa-search"></i>
+                                        </button>
+                                    )}
                                 </div>
-                                <div className="col-span-1 text-center">Kişi</div>
+                                <div className="col-span-1 text-center cursor-pointer flex items-center justify-center gap-1 hover:text-amber-500 transition-colors" onClick={() => handleSort('peopleCount')}>
+                                    Kişi
+                                    {sortConfig.key === 'peopleCount' && <i className={`fas fa-sort-${sortConfig.direction === 'asc' ? 'up' : 'down'} text-amber-500`}></i>}
+                                    {sortConfig.key !== 'peopleCount' && <i className="fas fa-sort text-slate-600"></i>}
+                                </div>
                                 <div className="col-span-2">Notlar</div>
                                 <div className="col-span-2">Sipariş</div>
                                 <div className="col-span-2 text-right">İşlem</div>
                             </div>
                             <div className="flex-1 overflow-y-auto custom-scrollbar divide-y divide-slate-800">
                                 {sortedTableList.map(({ tableVal, res }) => (
-                                    <div key={tableVal} onClick={() => setModal({ open: true, data: res || { tableNumber: tableVal } })} className={`grid grid-cols-12 gap-4 px-8 py-5 items-center table-row-hover cursor-pointer ${res ? 'bg-amber-500/[0.03]' : ''}`}>
+                                    <div key={tableVal} onClick={() => setModal({ open: true, data: res || { tableNumber: tableVal } })} className={`grid grid-cols-12 gap-4 px-8 py-2 items-center table-row-hover cursor-pointer ${res ? 'bg-amber-500/[0.03]' : ''}`}>
                                         <div className="col-span-1">
                                             <span className={`text-xl font-black ${res ? 'text-amber-500' : 'text-white/20'}`}>
                                                 {formatTableDisplay(tableVal)}
@@ -1320,7 +1376,7 @@ Uluırmak Turizm MTAL\nUygulama Oteli`;
                                         </div>
                                         <div className="col-span-2">
                                             {res && res.orders?.length > 0 ? (
-                                                <span className="text-xs text-white/60 line-clamp-1">{res.orders.map(o => `${o.quantity} ${o.name}`).join(', ')}</span>
+                                                <span className="text-xs text-white/60 line-clamp-1">{res.orders.map(o => `${o.quantity}x ${o.name}`).join(', ')}</span>
                                             ) : <span className="text-xs text-white/10">-</span>}
                                         </div>
                                         <div className="col-span-2 text-right flex justify-end gap-2">
