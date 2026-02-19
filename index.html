@@ -151,7 +151,8 @@
                 /* font-size removed to allow dynamic sizing via inline style */
                 white-space: nowrap !important; /* Tek satır zorunluluğu */
                 overflow: visible !important;
-                padding-top: 10px;
+                padding-top: 0 !important; 
+                padding-bottom: 20px !important;
             }
 
             body.print-mode-cards .name-card-logo { 
@@ -833,7 +834,8 @@
                                         whiteSpace: 'nowrap',
                                         wordBreak: 'normal',
                                         overflow: 'visible',
-                                        paddingTop: '20px'
+                                        paddingTop: '0px',
+                                        paddingBottom: '20px'
                                      }}>
                                         {res.customerName.toLocaleUpperCase('tr-TR')}
                                      </div>
