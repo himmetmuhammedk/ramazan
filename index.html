@@ -325,9 +325,9 @@
         };
         
         // Liste yazdırma için dinamik bölme fonksiyonu
-        // İlk sayfa 16 (Mutfak özeti dahil, sayfa sonuna kadar), sonraki sayfalar 21 satır alır
+        // İlk sayfa 10 (Mutfak özeti için yer açıldı), sonraki sayfalar 21 satır alır
         const chunkListDynamic = (arr) => {
-            const firstPageSize = 16;
+            const firstPageSize = 10;
             const otherPageSize = 21;
             const chunks = [];
             
@@ -943,7 +943,7 @@
         const ListPreviewModal = ({ reservations, selectedDate, stats, onClose, onConfirmPrint }) => {
             // Dinamik sayfalama kullanarak listeyi böl
             const chunkedList = chunkListDynamic(reservations);
-            // const printRef = useRef(null); // printRef kaldırıldı, çünkü artık kullanılmıyor
+            const printRef = useRef(null);
 
             // Sipariş Toplamlarını Hesapla
             const orderTotals = useMemo(() => {
@@ -962,7 +962,27 @@
                 return Object.entries(totals).sort((a, b) => b[1] - a[1]); // En çoktan aza doğru sırala
             }, [reservations]);
 
-            // handleSaveImage fonksiyonu kaldırıldı
+            const handleSaveImage = async () => {
+                if (!printRef.current) return;
+                try {
+                    // Ref'in tamamını (tüm sayfaları kapsayan div) yakalar
+                    const canvas = await window.html2canvas(printRef.current, {
+                        scale: 2,
+                        useCORS: true, 
+                        allowTaint: true,
+                        backgroundColor: '#f1f5f9', // Arkaplan rengi
+                        scrollY: -window.scrollY // Scroll kaymasını düzelt
+                    });
+                    
+                    const link = document.createElement('a');
+                    link.download = `Rezervasyon_Listesi_${selectedDate}.png`;
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                } catch (err) {
+                    console.error("Görüntü oluşturulamadı", err);
+                    alert("Görüntü kaydedilirken bir hata oluştu.");
+                }
+            };
 
             return (
                 <div className="fixed inset-0 z-[80] flex flex-col bg-slate-950/95 backdrop-blur-xl animate-fade-in no-print p-4 md:p-8">
@@ -973,7 +993,9 @@
                         </h2>
                         <div className="flex gap-4">
                              <button onClick={onClose} className="px-6 py-3 rounded-xl text-white/50 hover:text-white font-bold transition-all">Kapat</button>
-                             {/* "Listeyi Resim Olarak Kaydet" butonu kaldırıldı */}
+                             <button onClick={handleSaveImage} className="px-8 py-3 bg-slate-800 hover:bg-slate-700 text-amber-500 border border-slate-700 rounded-xl font-bold shadow-lg flex items-center gap-2">
+                                 <i className="fas fa-save"></i> Listeyi Resim Olarak Kaydet
+                             </button>
                              <button onClick={onConfirmPrint} className="px-8 py-3 bg-amber-600 hover:bg-amber-500 text-white rounded-xl font-bold shadow-lg flex items-center gap-2">
                                  <i className="fas fa-print"></i> Yazdır
                              </button>
@@ -982,7 +1004,7 @@
                     
                     {/* Preview Area (Scrollable) - A4 Portrait Simulation with Pagination */}
                     <div className="flex-1 overflow-y-auto custom-scrollbar bg-slate-900/50 rounded-3xl border border-slate-700 p-8 flex justify-center">
-                        <div className="flex flex-col gap-8 items-center">
+                        <div className="flex flex-col gap-8 items-center" ref={printRef}>
                         {chunkedList.map((pageItems, pageIndex) => (
                             <div key={pageIndex} className="bg-white w-full max-w-[210mm] min-h-[297mm] p-[10mm] shadow-2xl text-black flex flex-col relative box-border">
                                 
@@ -1062,7 +1084,7 @@
                                         ))}
                                     </tbody>
                                 </table>
-
+                                
                                 <div className="mt-auto pt-4 text-center text-[8pt] text-black font-bold">
                                     Sayfa {pageIndex + 1} / {chunkedList.length}
                                 </div>
@@ -1401,7 +1423,7 @@ Uluırmak Turizm MTAL\nUygulama Oteli`;
                                     <div className="flex justify-between items-center bg-white border-y-2 border-black py-2 px-4 mb-2 text-[10pt] text-black">
                                         <div><strong>Toplam Masa:</strong> {stats.count}</div>
                                         <div className="px-6 border-x border-black"><strong>Toplam Misafir:</strong> {stats.totalPeople}</div>
-                                        <div>{reservations.reduce((a,b)=>a+(b.adultCount||0),0)} Yet. / {reservations.reduce((a,b)=>a+(b.childCount||0),0)} Çoc.</div>
+                                        <div>{sortedReservationsForPrint.reduce((a,b)=>a+(b.adultCount||0),0)} Yet. / {sortedReservationsForPrint.reduce((a,b)=>a+(b.childCount||0),0)} Çoc.</div>
                                     </div>
                                 )}
 
