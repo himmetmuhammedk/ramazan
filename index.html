@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="tr">
 <head>
@@ -16,6 +17,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- html2canvas kütüphanesi eklendi -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #0f172a; overflow: hidden; margin: 0; }
         h1, h2, i { font-family: 'Playfair Display', serif; }
@@ -722,7 +725,10 @@
             const [loading, setLoading] = useState(true);
 
             const INITIAL_MENU_STRUCTURE = {
-                "GÜNÜN MENÜSÜ": [{ name: "GÜNÜN MENÜSÜ", price: "300,00" }],
+                "GÜNÜN MENÜSÜ": [
+                    { name: "GÜNÜN MENÜSÜ", price: "300,00" },
+                    { name: "PATATES KIZARTMASI", price: "75,00" }
+                ],
                 "İFTAR MENÜLERİ": [
                     { name: "İFTAR ET SOTE", price: "750,00" }, { name: "İFTAR PİLİÇ SARMA", price: "600,00" },
                     { name: "İFTAR ROSTO KÖFTE", price: "700,00" }, { name: "İFTAR TAVUK SOTE", price: "550,00" },
@@ -751,7 +757,8 @@
             };
 
             useEffect(() => {
-                const docRef = doc(db, 'settings', 'categorized_menus_v4');
+                // Sürüm v5 olarak güncellendi, böylece yeni menü yapısı zorlanacak
+                const docRef = doc(db, 'settings', 'categorized_menus_v5');
                 const unsubscribe = onSnapshot(docRef, (snap) => {
                     if (snap.exists()) {
                         const dbContent = snap.data().content || {};
@@ -770,7 +777,8 @@
                 const newContent = { ...menus };
                 newContent[category][index].name = value;
                 setMenus(newContent);
-                await setDoc(doc(db, 'settings', 'categorized_menus_v4'), { content: newContent });
+                // Sürüm v5 olarak güncellendi
+                await setDoc(doc(db, 'settings', 'categorized_menus_v5'), { content: newContent });
             };
 
             const sortedMenus = useMemo(() => {
@@ -897,6 +905,28 @@
 
         const ListPreviewModal = ({ reservations, selectedDate, stats, onClose, onConfirmPrint }) => {
             const filtered = reservations;
+            const printRef = useRef(null);
+
+            const handleSaveImage = async () => {
+                if (!printRef.current) return;
+                try {
+                    // html2canvas ile div'i yakala
+                    const canvas = await window.html2canvas(printRef.current, {
+                        scale: 2, // Yüksek çözünürlük için
+                        useCORS: true, // Görseller için CORS
+                        backgroundColor: '#ffffff'
+                    });
+                    
+                    // Link oluştur ve indir
+                    const link = document.createElement('a');
+                    link.download = `Rezervasyon_Listesi_${selectedDate}.png`;
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                } catch (err) {
+                    console.error("Görüntü oluşturulamadı", err);
+                    alert("Görüntü kaydedilirken bir hata oluştu.");
+                }
+            };
 
             return (
                 <div className="fixed inset-0 z-[80] flex flex-col bg-slate-950/95 backdrop-blur-xl animate-fade-in no-print p-4 md:p-8">
@@ -907,6 +937,9 @@
                         </h2>
                         <div className="flex gap-4">
                              <button onClick={onClose} className="px-6 py-3 rounded-xl text-white/50 hover:text-white font-bold transition-all">Kapat</button>
+                             <button onClick={handleSaveImage} className="px-8 py-3 bg-slate-800 hover:bg-slate-700 text-amber-500 border border-slate-700 rounded-xl font-bold shadow-lg flex items-center gap-2">
+                                 <i className="fas fa-save"></i> Kaydet
+                             </button>
                              <button onClick={onConfirmPrint} className="px-8 py-3 bg-amber-600 hover:bg-amber-500 text-white rounded-xl font-bold shadow-lg flex items-center gap-2">
                                  <i className="fas fa-print"></i> Yazdır
                              </button>
@@ -915,7 +948,7 @@
                     
                     {/* Preview Area (Scrollable) - A4 Portrait Simulation */}
                     <div className="flex-1 overflow-y-auto custom-scrollbar bg-slate-900/50 rounded-3xl border border-slate-700 p-8 flex justify-center">
-                        <div className="bg-white w-full max-w-[210mm] min-h-[297mm] p-[10mm] shadow-2xl text-black flex flex-col">
+                        <div ref={printRef} className="bg-white w-full max-w-[210mm] min-h-[297mm] p-[10mm] shadow-2xl text-black flex flex-col">
                             
                             {/* Header Section (Portrait Design - Compact) */}
                             <div className="border-b-4 border-black pb-2 mb-2 flex flex-col gap-2">
@@ -1005,7 +1038,7 @@
                 const unsubscribe1 = onSnapshot(collection(db, 'reservations'), (snap) => {
                     setReservations(snap.docs.map(d => ({ id: d.id, ...d.data() })));
                 });
-                const unsubscribe2 = onSnapshot(doc(db, 'settings', 'categorized_menus_v4'), (snap) => {
+                const unsubscribe2 = onSnapshot(doc(db, 'settings', 'categorized_menus_v5'), (snap) => {
                     if (snap.exists()) setCategorizedMenus(snap.data().content);
                 });
                 return () => { unsubscribe1(); unsubscribe2(); };
@@ -1371,7 +1404,7 @@ Uluırmak Turizm MTAL\nUygulama Oteli`;
                                     {sortConfig.key === 'tableNumber' && <i className={`fas fa-sort-${sortConfig.direction === 'asc' ? 'up' : 'down'} text-amber-500`}></i>}
                                     {sortConfig.key !== 'tableNumber' && <i className="fas fa-sort text-slate-600"></i>}
                                 </div>
-                                <div className="col-span-2 flex items-center gap-2">
+                                <div className="col-span-3 flex items-center gap-2">
                                     {showSearch ? (
                                         <div className="flex-1 flex items-center bg-slate-900 border border-slate-700 rounded-lg overflow-hidden h-7">
                                             <input 
@@ -1404,8 +1437,8 @@ Uluırmak Turizm MTAL\nUygulama Oteli`;
                                     {sortConfig.key === 'peopleCount' && <i className={`fas fa-sort-${sortConfig.direction === 'asc' ? 'up' : 'down'} text-amber-500`}></i>}
                                     {sortConfig.key !== 'peopleCount' && <i className="fas fa-sort text-slate-600"></i>}
                                 </div>
+                                <div className="col-span-3">Sipariş</div>
                                 <div className="col-span-2">Notlar</div>
-                                <div className="col-span-4">Sipariş</div>
                                 <div className="col-span-1">Kayıt</div>
                                 <div className="col-span-1 text-right">İşlem</div>
                             </div>
@@ -1417,7 +1450,7 @@ Uluırmak Turizm MTAL\nUygulama Oteli`;
                                                 {formatTableDisplay(tableVal)}
                                             </span>
                                         </div>
-                                        <div className="col-span-2">{res ? <div className="flex flex-col"><span className="font-bold text-sm">{res.customerName}</span><span className="text-xs text-white/50">{res.phone}</span></div> : <span className="text-xs text-white/10">-</span>}</div>
+                                        <div className="col-span-3">{res ? <div className="flex flex-col"><span className="font-bold text-sm">{res.customerName}</span><span className="text-xs text-white/50">{res.phone}</span></div> : <span className="text-xs text-white/10">-</span>}</div>
                                         <div className="col-span-1 text-center">
                                             {res ? (
                                                 <div className="flex flex-col items-center justify-center -space-y-1">
@@ -1434,16 +1467,16 @@ Uluırmak Turizm MTAL\nUygulama Oteli`;
                                                 </div>
                                             ) : "-"}
                                         </div>
+                                        <div className="col-span-3">
+                                            {res && res.orders?.length > 0 ? (
+                                                <span className="text-xs text-white/60">{res.orders.map(o => `${o.quantity}x ${o.name}`).join(', ')}</span>
+                                            ) : <span className="text-xs text-white/10">-</span>}
+                                        </div>
                                         <div className="col-span-2">
                                             {res && res.note ? (
                                                 <span className="text-xs text-amber-500/80 italic line-clamp-2" title={res.note}>
                                                     <i className="fas fa-sticky-note mr-1 opacity-50"></i>{res.note}
                                                 </span>
-                                            ) : <span className="text-xs text-white/10">-</span>}
-                                        </div>
-                                        <div className="col-span-4">
-                                            {res && res.orders?.length > 0 ? (
-                                                <span className="text-xs text-white/60">{res.orders.map(o => `${o.quantity}x ${o.name}`).join(', ')}</span>
                                             ) : <span className="text-xs text-white/10">-</span>}
                                         </div>
                                         <div className="col-span-1">{res ? <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{res.recordedBy}</span> : <span className="text-[10px] font-bold text-slate-700 uppercase tracking-widest">-</span>}</div>
