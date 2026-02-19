@@ -1,5 +1,4 @@
 
-
 <!DOCTYPE html>
 <html lang="tr">
 <head>
@@ -350,9 +349,6 @@
                 
                 const updateTimer = () => {
                     const now = new Date();
-                    // Eğer seçilen tarih bugün ise, kalan süreyi göster.
-                    // Eğer seçilen tarih gelecek ise, o tarihe ne kadar kaldığını göster.
-                    // Bu basitlik için direkt hedef zamana olan farkı alıyoruz.
                     const diff = target.getTime() - now.getTime();
 
                     if (diff <= 0) {
@@ -417,7 +413,6 @@
                     </div>
 
                     <div className="mt-auto pt-6 border-t border-slate-800/50">
-                        {/* Geri Sayım Sayacı */}
                         <div className="bg-gradient-to-r from-slate-900 to-slate-800 border border-amber-500/30 rounded-xl p-4 mb-4 text-center shadow-lg shadow-amber-900/10">
                             <div className="text-amber-500 text-[10px] font-black uppercase tracking-widest mb-1">İFTAR VAKTİ</div>
                             <div className="text-3xl font-black text-white font-mono tracking-tight leading-none mb-1">{iftarTime}</div>
@@ -463,7 +458,7 @@
             const [adultCount, setAdultCount] = useState(data?.adultCount || 2);
             const [childCount, setChildCount] = useState(data?.childCount || 0);
             const [phone, setPhone] = useState(data?.phone || '');
-            const [tableNumber, setTableNumber] = useState(data?.tableNumber || ''); // Varsayılan boş
+            const [tableNumber, setTableNumber] = useState(data?.tableNumber || ''); 
             const [note, setNote] = useState(data?.note || '');
             const [orders, setOrders] = useState(data?.orders || []);
             const [recordedBy, setRecordedBy] = useState(data?.recordedBy || '');
@@ -490,6 +485,15 @@
                     setOrders(orders.map(o => o.name === name ? { ...o, quantity: o.quantity - 1 } : o));
                 } else {
                     setOrders(orders.filter(o => o.name !== name));
+                }
+            };
+
+            const handleQuantityChange = (name, val) => {
+                // Eğer boşsa 0 olarak kabul et (kullanıcının silmesine izin ver)
+                const qty = val === '' ? 0 : parseInt(val);
+                
+                if (!isNaN(qty) && qty >= 0) {
+                     setOrders(orders.map(o => o.name === name ? { ...o, quantity: qty } : o));
                 }
             };
 
@@ -530,8 +534,10 @@
 
             const handleFinalSave = () => {
                 if (validateFields()) {
+                    // Adedi 0 olan ürünleri kaydetme
+                    const validOrders = orders.filter(o => o.quantity > 0);
                     onSave({
-                        customerName, adultCount, childCount, phone, tableNumber, note, orders, date: selectedDate, recordedBy
+                        customerName, adultCount, childCount, phone, tableNumber, note, orders: validOrders, date: selectedDate, recordedBy
                     });
                 }
             };
@@ -678,7 +684,14 @@
                                                         </div>
                                                         <div className="flex items-center gap-2 bg-slate-800/50 p-1 rounded-xl border border-slate-700/50 flex-none">
                                                             <button onClick={() => handleRemoveItem(item.name)} className="w-7 h-7 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all"><i className="fas fa-minus text-[10px]"></i></button>
-                                                            <span className="text-xs font-bold text-white w-5 text-center">{item.quantity}</span>
+                                                            <input 
+                                                                type="text" 
+                                                                inputMode="numeric"
+                                                                className="w-8 bg-transparent text-center text-xs font-bold text-white outline-none border-b border-transparent focus:border-amber-500 transition-colors"
+                                                                value={item.quantity} 
+                                                                onChange={(e) => handleQuantityChange(item.name, e.target.value)}
+                                                                onClick={(e) => e.stopPropagation()}
+                                                            />
                                                             <button onClick={() => handleAddItem(item)} className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all"><i className="fas fa-plus text-[10px]"></i></button>
                                                         </div>
                                                     </div>
