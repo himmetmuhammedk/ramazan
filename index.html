@@ -727,6 +727,9 @@
             const INITIAL_MENU_STRUCTURE = {
                 "GÜNÜN MENÜSÜ": [
                     { name: "GÜNÜN MENÜSÜ", price: "300,00" },
+                    { name: "İFTAR TABAĞI MİNİ", price: "75,00" },
+                    { name: "İFTAR TABAĞI STANDART", price: "100,00" },
+                    { name: "İFTAR TABAĞI EKSTRA", price: "150,00" },
                     { name: "PATATES KIZARTMASI", price: "75,00" }
                 ],
                 "İFTAR MENÜLERİ": [
@@ -757,8 +760,8 @@
             };
 
             useEffect(() => {
-                // Sürüm v5 olarak güncellendi, böylece yeni menü yapısı zorlanacak
-                const docRef = doc(db, 'settings', 'categorized_menus_v5');
+                // Sürüm v6 olarak güncellendi, böylece yeni menü yapısı zorlanacak
+                const docRef = doc(db, 'settings', 'categorized_menus_v6');
                 const unsubscribe = onSnapshot(docRef, (snap) => {
                     if (snap.exists()) {
                         const dbContent = snap.data().content || {};
@@ -777,8 +780,8 @@
                 const newContent = { ...menus };
                 newContent[category][index].name = value;
                 setMenus(newContent);
-                // Sürüm v5 olarak güncellendi
-                await setDoc(doc(db, 'settings', 'categorized_menus_v5'), { content: newContent });
+                // Sürüm v6 olarak güncellendi
+                await setDoc(doc(db, 'settings', 'categorized_menus_v6'), { content: newContent });
             };
 
             const sortedMenus = useMemo(() => {
@@ -981,8 +984,8 @@
                                         <th className="border border-black p-1 text-left font-extrabold uppercase w-[50px] text-black">Masa</th>
                                         <th className="border border-black p-1 text-left font-extrabold uppercase w-[25%] text-black">Misafir</th>
                                         <th className="border border-black p-1 text-center font-extrabold uppercase w-[15%] text-black">Kişi</th>
-                                        <th className="border border-black p-1 text-left font-extrabold uppercase w-[20%] text-black">Notlar</th>
                                         <th className="border border-black p-1 text-left font-extrabold uppercase w-[30%] text-black">Siparişler</th>
+                                        <th className="border border-black p-1 text-left font-extrabold uppercase w-[20%] text-black">Notlar</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -997,7 +1000,6 @@
                                                 {res.adultCount} Yet.
                                                 {res.childCount > 0 && <><br/>{res.childCount} Çoc.</>}
                                             </td>
-                                            <td className="border border-black p-1 align-top italic text-[8pt] text-black">{res.note || '-'}</td>
                                             <td className="border border-black p-1 align-top text-black">
                                                 {res.orders && res.orders.length > 0 ? (
                                                     <div className="text-[8pt] text-black leading-tight">
@@ -1005,6 +1007,7 @@
                                                     </div>
                                                 ) : '-'}
                                             </td>
+                                            <td className="border border-black p-1 align-top italic text-[8pt] text-black">{res.note || '-'}</td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -1038,7 +1041,7 @@
                 const unsubscribe1 = onSnapshot(collection(db, 'reservations'), (snap) => {
                     setReservations(snap.docs.map(d => ({ id: d.id, ...d.data() })));
                 });
-                const unsubscribe2 = onSnapshot(doc(db, 'settings', 'categorized_menus_v5'), (snap) => {
+                const unsubscribe2 = onSnapshot(doc(db, 'settings', 'categorized_menus_v6'), (snap) => {
                     if (snap.exists()) setCategorizedMenus(snap.data().content);
                 });
                 return () => { unsubscribe1(); unsubscribe2(); };
@@ -1294,8 +1297,8 @@ Uluırmak Turizm MTAL\nUygulama Oteli`;
                                         <th className="border border-black p-1 text-left font-extrabold uppercase w-[50px] text-black">Masa</th>
                                         <th className="border border-black p-1 text-left font-extrabold uppercase w-[25%] text-black">Misafir</th>
                                         <th className="border border-black p-1 text-center font-extrabold uppercase w-[15%] text-black">Kişi</th>
-                                        <th className="border border-black p-1 text-left font-extrabold uppercase w-[20%] text-black">Notlar</th>
                                         <th className="border border-black p-1 text-left font-extrabold uppercase w-[30%] text-black">Siparişler</th>
+                                        <th className="border border-black p-1 text-left font-extrabold uppercase w-[20%] text-black">Notlar</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -1310,7 +1313,6 @@ Uluırmak Turizm MTAL\nUygulama Oteli`;
                                                 {res.adultCount} Yet.
                                                 {res.childCount > 0 && <><br/>{res.childCount} Çoc.</>}
                                             </td>
-                                            <td className="border border-black p-1 align-top italic text-[8pt] text-black">{res.note || '-'}</td>
                                             <td className="border border-black p-1 align-top text-black">
                                                 {res.orders && res.orders.length > 0 ? (
                                                     <div className="text-[8pt] text-black leading-tight">
@@ -1318,6 +1320,7 @@ Uluırmak Turizm MTAL\nUygulama Oteli`;
                                                     </div>
                                                 ) : '-'}
                                             </td>
+                                            <td className="border border-black p-1 align-top italic text-[8pt] text-black">{res.note || '-'}</td>
                                         </tr>
                                     ))}
                                 </tbody>
