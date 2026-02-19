@@ -1194,21 +1194,46 @@
                     return;
                 }
 
+                // Helper for Title Case (e.g. GÜNÜN MENÜSÜ -> Günün Menüsü)
+                const toTitleCase = (str) => {
+                    if (!str) return "";
+                    return str.toLocaleLowerCase('tr-TR').split(' ').map(word => 
+                        word.charAt(0).toLocaleUpperCase('tr-TR') + word.slice(1)
+                    ).join(' ');
+                };
+
+                // Helper for Customer Name (e.g. HİMMET MUHAMMED KILIÇ -> Himmet Muhammed KILIÇ)
+                const formatCustomerName = (str) => {
+                    if (!str) return "";
+                    const words = str.trim().split(/\s+/);
+                    if (words.length === 0) return "";
+                    
+                    return words.map((word, index) => {
+                        // Son kelime (Soyisim) -> TAMAMI BÜYÜK
+                        if (index === words.length - 1) {
+                            return word.toLocaleUpperCase('tr-TR');
+                        }
+                        // Diğerleri (İsim) -> Baş harfi büyük
+                        return word.charAt(0).toLocaleUpperCase('tr-TR') + word.slice(1).toLocaleLowerCase('tr-TR');
+                    }).join(' ');
+                };
+
                 const formattedDate = res.date.split('-').reverse().join('.');
-                // Tarih objesi oluştururken saat 12:00 ekleyerek saat dilimi kaymalarını önlüyoruz
                 const dateObj = new Date(res.date + 'T12:00:00'); 
                 const dayName = dateObj.toLocaleDateString('tr-TR', { weekday: 'long' });
                 
-                const peopleInfo = res.childCount > 0 ? `${res.adultCount} Yetişkin, ${res.childCount} Çocuk` : `${res.adultCount} Yetişkin`;
+                let peopleInfo = `${res.adultCount} Kişi`;
+                if (res.childCount > 0) {
+                    peopleInfo += `\n${res.childCount} Çocuk`;
+                }
                 
                 let orderText = "";
                 if (res.orders && res.orders.length > 0) {
-                    // Siparişleri Kategori Sırasına Göre Dizme (Günün Menüsü -> İftar -> Alakart -> Tatlı -> Pasta)
+                    // Siparişleri Kategori Sırasına Göre Dizme
                     const sortedOrders = [...res.orders].sort((a, b) => {
                         let indexA = 999;
                         let indexB = 999;
 
-                        // Her siparişin hangi kategoride olduğunu bul ve o kategorinin sıra numarasını al
                         CATEGORY_ORDER.forEach((cat, idx) => {
                             if (categorizedMenus[cat] && categorizedMenus[cat].some(item => item.name === a.name)) {
                                 indexA = idx;
@@ -1225,11 +1250,25 @@
                     });
 
                     orderText = "\n\nSipariş Detayları:\n" + sortedOrders.map(o => {
-                        return `* ${o.name} (${o.quantity} Adet)`;
+                        return `* ${toTitleCase(o.name)} (${o.quantity} Adet)`;
                     }).join('\n');
                 }
 
-                const message = `Sayın ${res.customerName},\n\n${formattedDate}\n${dayName}\n\nGelveri\n${peopleInfo}${orderText}\n\niftar yemeği rezervasyonunuz oluşturulmuştur.\n\nİlgi ve nezaketiniz için teşekkür eder, iyi günler dileriz.\nSaygılarımızla.\n\nUluırmak Turizm MTAL\nUygulama Oteli`;
+                const message = `Sayın ${formatCustomerName(res.customerName)},
+
+${formattedDate}
+${dayName}
+
+Gelveri
+${peopleInfo}${orderText}
+
+İftar yemeği rezervasyonunuz oluşturulmuştur.
+
+İlgi ve nezaketiniz için teşekkür eder, iyi günler dileriz.
+Saygılarımızla.
+
+Uluırmak Turizm MTAL
+Uygulama Oteli`;
 
                 
                 if (cleanPhone.startsWith('0')) cleanPhone = '90' + cleanPhone.substring(1);
