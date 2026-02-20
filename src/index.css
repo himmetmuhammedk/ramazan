@@ -1,0 +1,252 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", sans-serif;
+  --font-serif: "Playfair Display", serif;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: #0f172a;
+  overflow: hidden;
+  margin: 0;
+}
+
+h1, h2, i {
+  font-family: 'Playfair Display', serif;
+}
+
+/* Scrollbar Genişletildi */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 14px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #0f172a;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 10px;
+  border: 3px solid #0f172a;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  cursor: pointer;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.table-row-hover {
+  transition: all 0.2s ease;
+}
+.table-row-hover:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  transform: scale(1.002);
+}
+
+/* Print Container Hiding */
+.print-header,
+.print-list-container,
+.print-list-page,
+.name-cards-container {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+  visibility: hidden;
+}
+
+/* Sayfa Yönlendirme Tanımları */
+@page {
+  margin: 0;
+}
+
+@page landscapePage {
+  size: A4 landscape;
+  margin: 0;
+}
+
+@page portraitPage {
+  size: A4 portrait;
+  margin: 0;
+}
+
+/* Yazdırma Tasarımı */
+@media print {
+  body.print-mode-list {
+    page: portraitPage;
+    width: 100%;
+  }
+  body.print-mode-cards {
+    page: portraitPage;
+  }
+
+  html,
+  body {
+    background-color: white !important;
+    color: black !important;
+    overflow: visible !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    font-family: 'Inter', sans-serif !important;
+  }
+
+  * {
+    color: #000000 !important;
+  }
+
+  #root > div > aside,
+  #root > div > main > header,
+  .no-print,
+  button,
+  .main-reservation-list {
+    display: none !important;
+  }
+
+  #root {
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* CRITICAL FIX: App container overrides */
+  #root > div {
+    height: auto !important;
+    overflow: visible !important;
+    display: block !important;
+  }
+
+  main {
+    padding: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* Liste Yazdırma Modu */
+  body.print-mode-list .print-list-page {
+    display: block !important;
+    position: static;
+    width: 100%;
+    height: auto;
+    overflow: visible;
+    clip: auto;
+    visibility: visible;
+  }
+
+  body.print-mode-list .print-list-page-item {
+    display: flex !important;
+    flex-direction: column;
+    height: 297mm !important;
+    width: 100% !important;
+    page-break-after: always !important;
+    break-after: page !important;
+    position: relative;
+    background-color: white !important;
+    padding: 10mm;
+    box-sizing: border-box;
+  }
+
+  body.print-mode-list .print-list-page-item:last-child {
+    page-break-after: auto !important;
+    break-after: auto !important;
+  }
+
+  /* İsim Kartı Yazdırma Modu */
+  body.print-mode-cards .name-cards-container {
+    display: block !important; /* Grid yerine block, sayfaları alt alta dizeceğiz */
+    position: static;
+    overflow: visible;
+    clip: auto;
+    margin: 0;
+    visibility: visible;
+    width: 100%;
+    height: auto;
+  }
+
+  body.print-mode-cards .name-cards-page {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: repeat(4, 1fr); /* Sayfayı tam 4 satıra böl */
+    gap: 10px;
+    padding: 10mm;
+    width: 210mm;
+    height: 297mm; /* Tam A4 Boyutu */
+    box-sizing: border-box;
+    page-break-after: always; /* Her div sonrası sayfa atla */
+    break-after: page;
+  }
+
+  /* Son sayfadan sonra boş sayfa çıkmasını engellemek için */
+  body.print-mode-cards .name-cards-page:last-child {
+    page-break-after: auto;
+    break-after: auto;
+  }
+
+  body.print-mode-cards .name-card {
+    border: 4px double black !important;
+    display: grid !important;
+    grid-template-rows: 60px 1fr 100px;
+    align-items: center;
+    justify-items: center;
+    text-align: center;
+    padding: 0 !important;
+    position: relative;
+    page-break-inside: avoid;
+    background: white !important;
+    color: black !important;
+    overflow: hidden;
+    height: 100%;
+    box-sizing: border-box;
+  }
+
+  body.print-mode-cards .name-card-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 28pt;
+    font-style: italic;
+    color: black !important;
+    align-self: end;
+    padding-bottom: 5px;
+  }
+
+  body.print-mode-cards .name-card-name {
+    font-family: 'Playfair Display', serif;
+    font-weight: 900;
+    line-height: 1.5;
+    color: black !important;
+    width: 90%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    white-space: nowrap !important;
+    overflow: visible !important;
+    padding-top: 0 !important;
+    padding-bottom: 40px !important;
+  }
+
+  body.print-mode-cards .name-card-logo {
+    width: 100px;
+    height: 100px;
+    object-fit: contain;
+    align-self: center;
+    padding-top: 0;
+  }
+}

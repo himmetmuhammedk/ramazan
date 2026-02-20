@@ -1,0 +1,15 @@
+{
+  "name": "Uluırmak Uygulama Oteli",
+  "short_name": "Uluırmak",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3443/3443338.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
