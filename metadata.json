@@ -1,4 +1,5 @@
 {
-  "name": "Uluırmak Uygulama Oteli Rezervasyon Sistemi",
-  "description": "Uluırmak Uygulama Oteli için geliştirilmiş, PWA destekli ve tek dosya tabanlı rezervasyon yönetim sistemi."
+  "name": "Rezervasyon Sistemi",
+  "description": "Ramazan ayı için özel olarak tasarlanmış, profesyonel restoran rezervasyon ve yönetim platformu.",
+  "requestFramePermissions": []
 }
