@@ -1,1 +1,0 @@
-// Uygulama index.html içindeki modül yapısına taşınmıştır.
